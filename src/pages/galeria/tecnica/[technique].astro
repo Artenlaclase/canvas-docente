@@ -3,19 +3,97 @@ import BaseLayout from "../../../layouts/BaseLayout.astro";
 import Header from "../../../components/Header.astro";
 import Gallery from "../../../components/Gallery.astro";
 import { getCollection } from 'astro:content';
+import { Image } from 'astro:assets';
 
 export async function getStaticPaths() {
-  const all = await getCollection('galeria');
-  const techniques = [...new Set(all.map((p) => p.data.technique))];
+  // Generar páginas para todas las técnicas, aunque no existan entradas en la colección
+  const techniques = [
+    'Pintura',
+    'Collage',
+    'Audiovisual',
+    'Mosaico',
+    'Volumen',
+    'Máscaras',
+    'Lámparas',
+    'Diseño',
+    'Dibujo',
+  ];
   return techniques.map((t) => ({ params: { technique: t }, props: { technique: t } }));
 }
 
 const { technique } = Astro.props as { technique: string };
 const all = await getCollection('galeria');
 const items = all.filter((p) => p.data.technique === technique);
+
+// Descripciones breves por técnica
+const descriptions: Record<string, string> = {
+  'Pintura': 'Exploraciones pictóricas, color y composición en distintos soportes y formatos.',
+  'Collage': 'Composición con materiales diversos: papeles, revistas y texturas superpuestas.',
+  'Audiovisual': 'Narrativas visuales y sonoras: registro, montaje y experimentación con video.',
+  'Mosaico': 'Construcción de imágenes a partir de teselas y patrones modulares.',
+  'Volumen': 'Trabajo tridimensional: maquetas, esculturas y objetos con materiales variados.',
+  'Máscaras': 'Diseño y creación de máscaras con identidad, cultura y performance.',
+  'Lámparas': 'Diseño de luminarias artesanales integrando forma, función y atmósfera.',
+  'Diseño': 'Lenguaje visual aplicado: afiches, tipografía, composición y prototipado.',
+  'Dibujo': 'Técnicas de línea, sombreado y observación para desarrollar el gesto y la mirada.',
+};
+
+// Carga de imágenes desde assets según técnica (globs estáticos requeridos por Vite)
+const pinturaMods = import.meta.glob('../../../assets/images/pintura*.{jpg,JPG,jpeg,png,webp}', { eager: true, import: 'default' });
+const collageMods = import.meta.glob('../../../assets/images/collage*.{jpg,JPG,jpeg,png,webp}', { eager: true, import: 'default' });
+const audiovisualMods = import.meta.glob('../../../assets/images/audiovisual*.{jpg,JPG,jpeg,png,webp}', { eager: true, import: 'default' });
+const mosaicoMods = import.meta.glob('../../../assets/images/mosaico*.{jpg,JPG,jpeg,png,webp}', { eager: true, import: 'default' });
+const volumenMods = import.meta.glob('../../../assets/images/volumen*.{jpg,JPG,jpeg,png,webp}', { eager: true, import: 'default' });
+const mascaraSingMods = import.meta.glob('../../../assets/images/mascara*.{jpg,JPG,jpeg,png,webp}', { eager: true, import: 'default' });
+const mascaraPluralMods = import.meta.glob('../../../assets/images/mascaras*.{jpg,JPG,jpeg,png,webp}', { eager: true, import: 'default' });
+const lamparasMods = import.meta.glob('../../../assets/images/lamparas*.{jpg,JPG,jpeg,png,webp}', { eager: true, import: 'default' });
+const disenoAccMods = import.meta.glob('../../../assets/images/diseño*.{jpg,JPG,jpeg,png,webp}', { eager: true, import: 'default' });
+const disenoPlainMods = import.meta.glob('../../../assets/images/diseno*.{jpg,JPG,jpeg,png,webp}', { eager: true, import: 'default' });
+const dibujoMods = import.meta.glob('../../../assets/images/dibujo*.{jpg,JPG,jpeg,png,webp}', { eager: true, import: 'default' });
+
+const techToMods: Record<string, Record<string, any>> = {
+  'Pintura': pinturaMods,
+  'Collage': collageMods,
+  'Audiovisual': audiovisualMods,
+  'Mosaico': mosaicoMods,
+  'Volumen': volumenMods,
+  'Máscaras': { ...mascaraSingMods, ...mascaraPluralMods },
+  'Lámparas': lamparasMods,
+  'Diseño': { ...disenoAccMods, ...disenoPlainMods },
+  'Dibujo': dibujoMods,
+};
+
+function imagesFor(tech: string) {
+  const mods = techToMods[tech];
+  if (!mods) return [];
+  return Object.entries(mods)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([, mod]) => mod as any);
+}
+
+const techniqueImages = imagesFor(technique);
 ---
 <BaseLayout title={`${technique} | Galería`}>
   <Fragment slot="header"><Header /></Fragment>
   <h1 class="text-2xl font-semibold mb-6">{technique}</h1>
-  <Gallery items={items} />
+  <p class="text-slate-700 mb-6">{descriptions[technique] ?? 'Selección de trabajos y materiales de referencia para esta técnica.'}</p>
+
+  {techniqueImages.length > 0 && (
+    <section class="mb-10">
+      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+        {techniqueImages.map((img) => (
+          <div class="overflow-hidden rounded-lg border border-slate-200">
+            <Image src={img} alt={technique} class="aspect-[4/3] w-full object-cover" />
+          </div>
+        ))}
+      </div>
+    </section>
+  )}
+
+  {items.length > 0 && (
+    <section>
+      <h2 class="text-lg font-semibold mb-4">Proyectos en {technique}</h2>
+      <Gallery items={items} />
+    </section>
+  )}
 </BaseLayout>
