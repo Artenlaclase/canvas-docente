@@ -1,5 +1,5 @@
 import type { APIRoute } from 'astro';
-import nodemailer from 'nodemailer';
+import * as nodemailer from 'nodemailer';
 
 const REQUIRED = ['name', 'email', 'subject', 'message'] as const;
 
