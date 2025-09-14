@@ -1,5 +1,6 @@
 ---
 import "../styles/global.css";
+import Footer from "../components/Footer.astro";
 const { title = 'Canvas Docente', description = '20 años de artes visuales', lang = 'es' } = Astro.props;
 ---
 <html lang={lang} class="h-full">
@@ -16,6 +17,10 @@ const { title = 'Canvas Docente', description = '20 años de artes visuales', la
     <main class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
       <slot />
     </main>
-    <slot name="footer" />
+    {Astro.slots.has('footer') ? (
+      <slot name="footer" />
+    ) : (
+      <Footer />
+    )}
   </body>
 </html>
