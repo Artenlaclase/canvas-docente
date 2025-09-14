@@ -80,18 +80,13 @@ const techniqueImages = imagesFor(technique);
   <h1 class="text-2xl font-semibold mb-6">{technique}</h1>
   <p class="text-slate-700 mb-6">{descriptions[technique] ?? 'Selección de trabajos y materiales de referencia para esta técnica.'}</p>
 
-  {techniqueImages.length > 0 && (
+  {techniqueImages.length > 0 ? (
     <section class="mb-10">
       <LightboxGallery images={techniqueImages} altBase={technique} />
     </section>
-  )}
+  ) : null}
 
-  {items.length > 0 && (
-    <section>
-      <h2 class="text-lg font-semibold mb-4">Proyectos en {technique}</h2>
-      <Gallery items={items} />
-    </section>
-  )}
+  
   <div class="mb-4">
     <a href="/galeria" class="inline-flex items-center gap-2 text-slate-600 hover:text-slate-800">
       <span class="text-lg">←</span>

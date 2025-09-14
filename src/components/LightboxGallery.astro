@@ -26,10 +26,10 @@ const items = images.map((img, idx) => ({ idx, src: (img as any).src ?? img, w: 
     <div class="absolute inset-0 flex items-center justify-center p-4">
       <div class="relative w-full max-w-6xl">
         <div class="relative bg-black rounded-lg overflow-hidden">
-          <button id="closeBtn" class="absolute top-2 right-2 h-10 w-10 grid place-items-center rounded-full bg-black/50 text-white text-xl hover:bg-black/70" aria-label="Cerrar">×</button>
+          <button id="closeBtn" class="absolute top-2 right-2 z-10 h-10 w-10 grid place-items-center rounded-full bg-black/50 text-white text-xl hover:bg-black/70" aria-label="Cerrar">×</button>
           <button id="prevBtn" class="absolute left-2 top-1/2 -translate-y-1/2 z-10 h-10 w-10 rounded-full bg-black/40 text-white hover:bg-black/60">‹</button>
           <button id="nextBtn" class="absolute right-2 top-1/2 -translate-y-1/2 z-10 h-10 w-10 rounded-full bg-black/40 text-white hover:bg-black/60">›</button>
-          <div class="w-[min(100vw,96rem)] max-h-[95vh] flex items-center justify-center">
+          <div class="w-[min(100vw,96rem)] max-h-[95vh] pt-12 flex items-center justify-center">
             <img id="lightboxImage" class="max-h-[95vh] w-auto object-contain select-none" alt={altBase} />
           </div>
         </div>
@@ -141,6 +141,15 @@ const items = images.map((img, idx) => ({ idx, src: (img as any).src ?? img, w: 
           openAt(idx);
         });
         if (closeBtn) closeBtn.addEventListener('click', close);
+        // Fallback: clic en la esquina superior derecha cierra
+        if (scope) scope.addEventListener('click', (e) => {
+          const target = /** @type {Element} */(e.target);
+          const rect = scope.getBoundingClientRect();
+          const x = (/** @type {MouseEvent} */(e)).clientX - rect.left;
+          const y = (/** @type {MouseEvent} */(e)).clientY - rect.top;
+          // área de 48x48px desde la esquina superior derecha
+          if (x > rect.width - 48 && y < 48 && !(target.closest('#lightboxImage'))) close();
+        });
         if (backdrop) backdrop.addEventListener('click', close);
         // Opcional: clic en el contenedor negro fuera de la imagen también cierra
         const blackContainer = scope.querySelector('.bg-black');
