@@ -1,9 +1,112 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
 import Header from "../components/Header.astro";
+import { Image } from 'astro:assets';
+import raul from "../assets/images/raulRosales.jpg";
 ---
-<BaseLayout title="Sobre mí | Canvas Docente">
+
+<BaseLayout title="Sobre mí | Canvas Docente" description="Profesor de Artes Visuales y Tecnología Educativa — Raúl Rosales R.">
   <Fragment slot="header"><Header /></Fragment>
-  <h1 class="text-2xl font-semibold mb-4">Sobre mí</h1>
-  <p class="text-slate-700">Docente de artes visuales con 20 años de experiencia, impulsando la creatividad y el aprendizaje a través de proyectos prácticos.</p>
+
+  <!-- Hero / Resumen -->
+  <section class="grid gap-8 md:grid-cols-[1fr,320px] items-start">
+    <div>
+      <h1 class="text-3xl sm:text-4xl font-bold tracking-tight">Profesor de Artes Visuales y Tecnología Educativa</h1>
+      <p class="mt-2 text-lg text-slate-700">Raúl Rosales R.</p>
+      <p class="mt-4 text-slate-700">Con más de 20 años de experiencia en la enseñanza y creación artística, he desarrollado un enfoque innovador que integra el arte, la tecnología y el cine en el aprendizaje. Mi trayectoria profesional abarca la educación en diversos establecimientos de la Región Metropolitana de Chile, promoviendo metodologías creativas que estimulan la expresión visual y el pensamiento crítico en los estudiantes.</p>
+      <p class="mt-3 text-slate-700">Este espacio es una muestra de mi labor docente y creativa, donde el arte se convierte en una herramienta para transformar la educación.</p>
+    </div>
+
+    <aside class="justify-self-center md:justify-self-end">
+      <div class="overflow-hidden rounded-xl border border-slate-200 shadow-sm max-w-[320px]">
+        <Image src={raul} alt="Raúl Rosales" class="w-full h-auto object-cover" />
+        <div class="p-4">
+          <p class="font-semibold">Raúl Rosales R.</p>
+          <p class="text-sm text-slate-600">Profesor de Artes Visuales</p>
+        </div>
+      </div>
+    </aside>
+  </section>
+
+  <!-- Experiencia y Compromiso -->
+  <section class="mt-10 grid gap-8 md:grid-cols-2">
+    <div class="rounded-xl border border-slate-200 p-6 bg-white">
+      <h2 class="text-xl font-semibold">Experiencia Profesional</h2>
+      <p class="mt-3 text-slate-700">Actualmente, me desempeño como profesor titular de Artes Visuales en el Liceo Municipal Pablo Neruda, donde acompaño a los jóvenes en la exploración del arte contemporáneo, sus medios de difusión y la educación artística, fomentando el desarrollo de proyectos visuales que conectan con su entorno y cultura.</p>
+    </div>
+    <div class="rounded-xl border border-slate-200 p-6 bg-white">
+      <h2 class="text-xl font-semibold">Mi Compromiso</h2>
+      <p class="mt-3 text-slate-700">Mi compromiso es potenciar la creatividad y la experimentación en el arte, promoviendo el uso de herramientas digitales y tecnológicas para enriquecer la experiencia de aprendizaje de los estudiantes. Siempre estoy en búsqueda de nuevas estrategias que combinen el arte y la educación para generar un impacto significativo en mis estudiantes y en la comunidad educativa.</p>
+    </div>
+  </section>
+
+  <!-- Formación -->
+  <section class="mt-10 rounded-xl border border-slate-200 p-6 bg-white">
+    <h2 class="text-xl font-semibold">Formación Académica y Especializaciones</h2>
+    <ul class="mt-4 space-y-3">
+      <li class="flex gap-3">
+        <span class="shrink-0 rounded-md bg-sky-100 text-sky-700 px-2 py-0.5 text-xs font-medium">2013</span>
+        <p class="text-slate-700"><strong>Magíster en Innovación Curricular y Evaluación Educativa</strong>. Universidad del Desarrollo.</p>
+      </li>
+      <li class="flex gap-3">
+        <span class="shrink-0 rounded-md bg-sky-100 text-sky-700 px-2 py-0.5 text-xs font-medium">2009</span>
+        <p class="text-slate-700"><strong>Postítulo en Educación Tecnológica</strong>. Universidad Viña del Mar.</p>
+      </li>
+      <li class="flex gap-3">
+        <span class="shrink-0 rounded-md bg-sky-100 text-sky-700 px-2 py-0.5 text-xs font-medium">2005</span>
+        <p class="text-slate-700"><strong>Licenciado en Educación y Pedagogía en Artes Plásticas</strong>. Universidad Metropolitana de Ciencias de la Educación.</p>
+      </li>
+    </ul>
+  </section>
+
+  <!-- Capacitaciones -->
+  <section class="mt-10 rounded-xl border border-slate-200 p-6 bg-white">
+    <h2 class="text-xl font-semibold">Capacitaciones y Cursos Destacados</h2>
+    <div class="mt-4 grid gap-3 sm:grid-cols-2">
+      <div class="rounded-lg border border-slate-200 p-4">
+        <p class="text-sm text-slate-500">2025</p>
+        <p class="font-medium">Diplomado en Formación de Instructores en Habilidades y Técnicas de Enseñanza-Aprendizaje</p>
+      </div>
+      <div class="rounded-lg border border-slate-200 p-4">
+        <p class="text-sm text-slate-500">2025</p>
+        <p class="font-medium">Enseñanza de Artes Visuales a través de herramientas digitales con Inteligencia Artificial</p>
+      </div>
+      <div class="rounded-lg border border-slate-200 p-4">
+        <p class="text-sm text-slate-500">2025</p>
+        <p class="font-medium">Técnicas de Aprendizaje Activo con Uso de Herramientas Digitales</p>
+      </div>
+      <div class="rounded-lg border border-slate-200 p-4">
+        <p class="text-sm text-slate-500">2024</p>
+        <p class="font-medium">Cine para Educadores: Apreciación y Creación — Cineteca Nacional de Chile</p>
+      </div>
+      <div class="rounded-lg border border-slate-200 p-4">
+        <p class="text-sm text-slate-500">2024</p>
+        <p class="font-medium">Estrategias de Comprensión Lectora — Educrea</p>
+      </div>
+      <div class="rounded-lg border border-slate-200 p-4">
+        <p class="text-sm text-slate-500">2023</p>
+        <p class="font-medium">Metodologías activas con uso de TICs — Universidad de la Frontera</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Áreas de especialización -->
+  <section class="mt-10">
+    <h2 class="text-xl font-semibold">Áreas de Especialización</h2>
+    <div class="mt-4 grid gap-4 md:grid-cols-3">
+      <div class="rounded-xl border border-slate-200 p-5 bg-white">
+        <h3 class="font-semibold">Arte contemporáneo y educación artística</h3>
+        <p class="mt-2 text-slate-700">Exploración de técnicas modernas y su aplicación en la educación.</p>
+      </div>
+      <div class="rounded-xl border border-slate-200 p-5 bg-white">
+        <h3 class="font-semibold">Producción audiovisual y cine independiente</h3>
+        <p class="mt-2 text-slate-700">Creación de proyectos audiovisuales con enfoque educativo.</p>
+      </div>
+      <div class="rounded-xl border border-slate-200 p-5 bg-white">
+        <h3 class="font-semibold">Desarrollo web y tecnología educativa</h3>
+        <p class="mt-2 text-slate-700">Uso de herramientas digitales para enriquecer el aprendizaje.</p>
+      </div>
+    </div>
+  </section>
+
 </BaseLayout>

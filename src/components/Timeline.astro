@@ -1,0 +1,31 @@
+---
+interface Item {
+  title: string;
+  subtitle?: string;
+  period?: string; // e.g. "2013", "2023–hoy"
+  description?: string;
+}
+
+const { items = [], title = 'Trayectoria' } = Astro.props as {
+  items: Item[];
+  title?: string;
+};
+---
+<section>
+  <h2 class="text-xl font-semibold">{title}</h2>
+  <ol class="relative mt-6 border-s-2 border-slate-200">
+    {items.map((it) => (
+      <li class="ms-6 pb-8 last:pb-0">
+        <span class="absolute -start-[9px] mt-1 h-4 w-4 rounded-full border-2 border-white bg-sky-600 shadow ring-1 ring-sky-200" />
+        <div class="rounded-lg border border-slate-200 bg-white p-4">
+          <div class="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+            <p class="font-semibold">{it.title}</p>
+            {it.subtitle && <p class="text-slate-600 text-sm">{it.subtitle}</p>}
+            {it.period && <span class="ms-auto rounded bg-slate-100 px-2 py-0.5 text-xs text-slate-700">{it.period}</span>}
+          </div>
+          {it.description && <p class="mt-2 text-slate-700">{it.description}</p>}
+        </div>
+      </li>
+    ))}
+  </ol>
+</section>

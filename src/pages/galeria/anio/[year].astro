@@ -4,7 +4,13 @@ import Header from "../../../components/Header.astro";
 import Gallery from "../../../components/Gallery.astro";
 import { getCollection } from 'astro:content';
 
-const { year } = Astro.params;
+export async function getStaticPaths() {
+  const all = await getCollection('galeria');
+  const years = [...new Set(all.map((p) => String(p.data.year)))];
+  return years.map((y) => ({ params: { year: y }, props: { year: y } }));
+}
+
+const { year } = Astro.props as { year: string };
 const all = await getCollection('galeria');
 const items = all.filter((p) => String(p.data.year) === String(year));
 ---
