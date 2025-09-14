@@ -73,6 +73,15 @@ function imagesFor(tech: string) {
 }
 
 const techniqueImages = imagesFor(technique);
+// Videos por técnica (por ahora, solo 'Máscaras')
+const videosByTechnique: Record<string, string[]> = {
+  'Máscaras': [
+    'gQ9AeOeJX1k',
+    'jsGT0yx8gKc',
+    'qrW2V9qM8uY',
+  ],
+};
+const videoIds = videosByTechnique[technique] ?? [];
 ---
 <BaseLayout title={`${technique} | Galería`}>
   <Fragment slot="header"><Header /></Fragment>
@@ -83,6 +92,27 @@ const techniqueImages = imagesFor(technique);
   {techniqueImages.length > 0 ? (
     <section class="mb-10">
       <LightboxGallery images={techniqueImages} altBase={technique} />
+    </section>
+  ) : null}
+
+  {videoIds.length > 0 ? (
+    <section class="mb-10">
+      <h2 class="text-xl font-semibold mb-4">Videos</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {videoIds.map((id) => (
+          <div class="w-full aspect-video overflow-hidden rounded-lg border border-slate-200 bg-black">
+            <iframe
+              src={`https://www.youtube-nocookie.com/embed/${id}`}
+              title="Video de YouTube"
+              class="w-full h-full"
+              frameborder="0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              allowfullscreen
+              referrerpolicy="strict-origin-when-cross-origin"
+            />
+          </div>
+        ))}
+      </div>
     </section>
   ) : null}
 
