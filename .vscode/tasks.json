@@ -1,0 +1,49 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Install dependencies",
+			"type": "shell",
+			"command": "npm install",
+			"problemMatcher": [
+				"$eslint-stylish"
+			],
+			"group": "build"
+		},
+		{
+			"label": "Dev build check",
+			"type": "shell",
+			"command": "npm run -s astro check",
+			"isBackground": false,
+			"group": "build"
+		},
+		{
+			"label": "Astro typecheck",
+			"type": "shell",
+			"command": "npm i -D @astrojs/check typescript; npm run -s astro check",
+			"isBackground": false,
+			"group": "build"
+		},
+		{
+			"label": "Install nodemailer types",
+			"type": "shell",
+			"command": "npm i -D @types/nodemailer",
+			"isBackground": false,
+			"group": "build"
+		},
+		{
+			"label": "Fix nodemailer types and check",
+			"type": "shell",
+			"command": "npm i -D @types/nodemailer; npm run -s astro check",
+			"isBackground": false,
+			"group": "build"
+		},
+		{
+			"label": "Astro Check Run",
+			"type": "shell",
+			"command": "npm run -s astro check",
+			"isBackground": false,
+			"group": "build"
+		}
+	]
+}

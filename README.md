@@ -28,7 +28,8 @@ src/
       index.astro
       [slug].astro
     sobre-mi.astro
-    contacto.astro
+    api/
+      contact.ts
   content/
     config.ts
     galeria/
@@ -66,6 +67,26 @@ npx astro sync
 ### Construir
 ```powershell
 npm run build
+
+### Formulario de contacto (correo)
+
+El sitio incluye un formulario en la portada que envía correos vía Gmail (SMTP) usando un endpoint de Astro (`/api/contact`). Para habilitarlo:
+
+1) Crea un archivo `.env` en la raíz basado en `.env.example` y define:
+
+```
+GMAIL_USER=tu_cuenta@gmail.com
+GMAIL_APP_PASSWORD=tu_app_password
+CONTACT_TO=devweb.venta@gmail.com # opcional (si no se define, se usa GMAIL_USER)
+```
+
+2) Usa una contraseña de aplicación (App Password) de Gmail con 2FA activado, no tu contraseña normal.
+
+3) Reinicia el servidor de desarrollo.
+
+Notas:
+- El botón “Contacto” del menú te lleva a la sección `/#contacto` de la página de inicio.
+- Si despliegas en entornos que no permiten funciones/SSR, necesitarás un servicio externo de email o un adaptador compatible para Astro.
 ```
 
 ### Añadir nuevas obras (galería)
