@@ -1,43 +1,102 @@
-# Astro Starter Kit: Minimal
+## Canvas Docente
 
-```sh
-npm create astro@latest -- --template minimal
+Sitio web para documentar 20 años de proyectos de artes visuales: técnicas (Pintura, Collage, Audiovisual, Mosaico, Volumen, Máscaras, Lámparas, Diseño, Dibujo) y un blog de experiencias.
+
+### Tecnologías
+- Astro 5
+- Tailwind CSS (+ Typography)
+- Colecciones de contenido de Astro (Markdown/MDX)
+
+### Estructura principal
+
+```
+src/
+  components/
+    Header.astro
+    Gallery.astro
+    TechniqueFilter.astro
+    BlogCard.astro
+  layouts/
+    BaseLayout.astro
+  pages/
+    index.astro
+    galeria/
+      index.astro
+      tecnica/[technique].astro
+      anio/[year].astro
+    blog/
+      index.astro
+      [slug].astro
+    sobre-mi.astro
+    contacto.astro
+  content/
+    config.ts
+    galeria/
+      ...md|mdx (obras)
+    blog/
+      ...md|mdx (posts)
+  styles/
+    global.css
 ```
 
-> 🧑‍🚀 **Seasoned astronaut?** Delete this file. Have fun!
+### Contenido
+Colecciones definidas en `src/content/config.ts`:
+- `galeria`: { title, technique, year, cover?, images[], tags[] }
+- `blog`: { title, excerpt?, date, cover?, tags[] }
 
-## 🚀 Project Structure
+Ejemplos: `src/content/galeria/pintura-ejemplo.md`, `src/content/blog/primer-post.md`.
 
-Inside of your Astro project, you'll see the following folders and files:
+### Ejecutar en desarrollo
 
-```text
-/
-├── public/
-├── src/
-│   └── pages/
-│       └── index.astro
-└── package.json
+1) Instalar dependencias
+```powershell
+npm install
 ```
 
-Astro looks for `.astro` or `.md` files in the `src/pages/` directory. Each page is exposed as a route based on its file name.
+2) Iniciar el servidor
+```powershell
+npm run dev
+```
 
-There's nothing special about `src/components/`, but that's where we like to put any Astro/React/Vue/Svelte/Preact components.
+3) Sincronizar tipos de contenido (si agregas/eliminas archivos MD/MDX)
+```powershell
+npx astro sync
+```
 
-Any static assets, like images, can be placed in the `public/` directory.
+### Construir
+```powershell
+npm run build
+```
 
-## 🧞 Commands
+### Añadir nuevas obras (galería)
+Crear un archivo `.md` o `.mdx` en `src/content/galeria/` con frontmatter:
 
-All commands are run from the root of the project, from a terminal:
+```
+---
+title: "Nombre de la obra o serie"
+technique: "Pintura" # o Collage, Audiovisual, Mosaico, Volumen, Máscaras, Lámparas, Diseño, Dibujo
+year: 2021
+cover: "/ruta/a/imagen.jpg" # opcional
+images: []
+tags: ["aula", "materiales"]
+---
+Descripción opcional...
+```
 
-| Command                   | Action                                           |
-| :------------------------ | :----------------------------------------------- |
-| `npm install`             | Installs dependencies                            |
-| `npm run dev`             | Starts local dev server at `localhost:4321`      |
-| `npm run build`           | Build your production site to `./dist/`          |
-| `npm run preview`         | Preview your build locally, before deploying     |
-| `npm run astro ...`       | Run CLI commands like `astro add`, `astro check` |
-| `npm run astro -- --help` | Get help using the Astro CLI                     |
+### Añadir posts del blog
+Crear un `.md` en `src/content/blog/`:
 
-## 👀 Want to learn more?
+```
+---
+title: "Título del post"
+excerpt: "Resumen corto"
+date: 2024-06-10
+cover: "/ruta/a/imagen.jpg"
+tags: ["reflexión"]
+---
+Cuerpo del post...
+```
 
-Feel free to check [our documentation](https://docs.astro.build) or jump into our [Discord server](https://astro.build/chat).
+### Notas
+- Los estilos de Tailwind están en `src/styles/global.css` y se importan en `BaseLayout.astro`.
+- Si ves advertencias en el editor sobre `@tailwind` o `@apply`, son del analizador estático del editor. En la compilación real de Astro se procesan con PostCSS/Tailwind.
