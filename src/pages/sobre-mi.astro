@@ -3,6 +3,7 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 import Header from "../components/Header.astro";
 import { Image } from 'astro:assets';
 import raul from "../assets/images/raulRosales.jpg";
+import Timeline from "../components/Timeline.astro";
 ---
 
 <BaseLayout title="Sobre mí | Canvas Docente" description="Profesor de Artes Visuales y Tecnología Educativa — Raúl Rosales R.">
@@ -107,6 +108,37 @@ import raul from "../assets/images/raulRosales.jpg";
         <p class="mt-2 text-slate-700">Uso de herramientas digitales para enriquecer el aprendizaje.</p>
       </div>
     </div>
+  </section>
+
+  <!-- Timeline de trayectoria -->
+  <section class="mt-12">
+    <Timeline
+      title="Trayectoria"
+      items={[
+        {
+          title: 'Profesor titular de Artes Visuales',
+          subtitle: 'Liceo Municipal Pablo Neruda',
+          period: 'Actualidad',
+          description: 'Acompaño a jóvenes en la exploración del arte contemporáneo, medios de difusión y educación artística, fomentando proyectos visuales conectados con su entorno.'
+        },
+        {
+          title: 'Magíster en Innovación Curricular y Evaluación Educativa',
+          subtitle: 'Universidad del Desarrollo',
+          period: '2013',
+          description: 'Profundización en estrategias de evaluación y diseño curricular contemporáneo.'
+        },
+        {
+          title: 'Postítulo en Educación Tecnológica',
+          subtitle: 'Universidad Viña del Mar',
+          period: '2009'
+        },
+        {
+          title: 'Licenciado en Educación y Pedagogía en Artes Plásticas',
+          subtitle: 'UMCE',
+          period: '2005'
+        }
+      ]}
+    />
   </section>
 
 </BaseLayout>
