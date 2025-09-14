@@ -1,0 +1,16 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import Header from "../../components/Header.astro";
+import Gallery from "../../components/Gallery.astro";
+import { getCollection } from 'astro:content';
+
+const { technique } = Astro.params;
+const decoded = decodeURIComponent(technique ?? '');
+const all = await getCollection('galeria');
+const items = all.filter((p) => p.data.technique === decoded);
+---
+<BaseLayout title={`${decoded} | Galería`}>
+  <Fragment slot="header"><Header /></Fragment>
+  <h1 class="text-2xl font-semibold mb-6">{decoded}</h1>
+  <Gallery items={items} />
+</BaseLayout>

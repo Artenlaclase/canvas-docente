@@ -1,0 +1,19 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import Header from "../../components/Header.astro";
+import { getCollection } from 'astro:content';
+
+const { slug } = Astro.params;
+const post = (await getCollection('blog')).find((p) => p.slug === slug);
+if (!post) throw new Error('Post no encontrado');
+const { Content } = await post.render();
+---
+<BaseLayout title={`${post.data.title} | Blog`}>
+  <Fragment slot="header"><Header /></Fragment>
+  <article class="prose max-w-none">
+    <h1>{post.data.title}</h1>
+    {post.data.cover && (<img src={post.data.cover} alt="" class="rounded-lg" />)}
+    <p class="text-sm text-slate-500">{new Date(post.data.date).toLocaleDateString('es')}</p>
+    <Content />
+  </article>
+</BaseLayout>

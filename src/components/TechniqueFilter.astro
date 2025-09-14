@@ -1,0 +1,26 @@
+---
+const { techniques = [], selected = '', years = [], selectedYear = '' } = Astro.props as {
+  techniques: string[];
+  selected?: string;
+  years: number[];
+  selectedYear?: string | number;
+};
+---
+<form class="mb-6 grid grid-cols-1 sm:grid-cols-3 gap-3" method="get">
+  <select name="technique" class="border border-slate-300 rounded-md px-3 py-2 bg-white">
+    <option value="">Todas las técnicas</option>
+    {techniques.map((t) => (
+      <option value={t} selected={selected === t}>{t}</option>
+    ))}
+  </select>
+  <select name="year" class="border border-slate-300 rounded-md px-3 py-2 bg-white">
+    <option value="">Todos los años</option>
+    {years.map((y) => (
+      <option value={y} selected={String(selectedYear) === String(y)}>{y}</option>
+    ))}
+  </select>
+  <div class="flex gap-2">
+    <button type="submit" class="inline-flex items-center justify-center rounded-md bg-sky-600 px-4 py-2 text-white hover:bg-sky-700">Filtrar</button>
+    <a href="." class="inline-flex items-center justify-center rounded-md border border-slate-300 px-4 py-2 text-slate-700 hover:bg-slate-50">Limpiar</a>
+  </div>
+</form>

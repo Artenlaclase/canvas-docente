@@ -1,0 +1,13 @@
+---
+const { post } = Astro.props as { post: any };
+---
+<a href={post.url} class="group block rounded-lg overflow-hidden border border-slate-200 hover:shadow-md transition">
+  {post.data.cover && (
+    <img src={post.data.cover} alt={post.data.title} loading="lazy" class="aspect-[16/9] w-full object-cover group-hover:scale-[1.02] transition" />
+  )}
+  <div class="p-4">
+    <h3 class="font-semibold">{post.data.title}</h3>
+    <p class="text-sm text-slate-600 mt-1 line-clamp-2">{post.data.excerpt}</p>
+    <p class="text-xs text-slate-500 mt-2">{new Date(post.data.date).toLocaleDateString('es')}</p>
+  </div>
+</a>
