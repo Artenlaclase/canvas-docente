@@ -1,142 +1,295 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
 import Header from "../components/Header.astro";
-import { Image } from 'astro:assets';
+import { Image } from "astro:assets";
 import raul from "../assets/images/raulRosales.jpg";
 import Timeline from "../components/Timeline.astro";
 ---
 
-<BaseLayout title="Sobre mí | Canvas Docente" description="Profesor de Artes Visuales y Tecnología Educativa — Raúl Rosales R.">
-  <Fragment slot="header"><Header /></Fragment>
+<BaseLayout
+    title="Sobre mí | Canvas Docente"
+    description="Profesor de Artes Visuales y Tecnología Educativa — Raúl Rosales R."
+>
+    <Fragment slot="header"><Header /></Fragment>
 
-  <!-- Hero / Resumen -->
-  <section class="grid gap-8 md:grid-cols-[1fr,320px] items-start">
-    <div>
-      <h1 class="text-3xl sm:text-4xl font-bold tracking-tight">Profesor de Artes Visuales y Tecnología Educativa</h1>
-      <p class="mt-2 text-lg text-slate-700">Raúl Rosales R.</p>
-  <p class="mt-4 text-slate-700">Con más de 20 años de experiencia como profesor de Artes Visuales y Tecnología, he dedicado mi carrera a integrar de manera innovadora el arte, la tecnología, el cine y el pensamiento computacional en el ámbito educativo. Mi trayectoria se ha desarrollado en diversos establecimientos de la Región Metropolitana de Chile, donde he promovido metodologías activas y colaborativas que fomentan la expresión visual, la creatividad y el pensamiento crítico en los estudiantes.</p>
-  <p class="mt-3 text-slate-700">Mi formación de posgrado en Innovación Curricular y Evaluación Educativa, junto con especializaciones en Educación Tecnológica y capacitaciones constantes en desarrollo web, programación y producción audiovisual, me ha permitido crear entornos de aprendizaje enriquecidos con TIC, materiales didácticos digitales y plataformas virtuales. He liderado proyectos interdisciplinarios y formado a otros docentes en el uso pedagógico de herramientas tecnológicas, siempre con el objetivo de transformar la educación a través del arte y la innovación.</p>
-  <p class="mt-3 text-slate-700">Este espacio es un reflejo de mi labor docente y creativa, un lugar donde el arte se convierte en una herramienta de transformación educativa y personal. Bienvenidos.</p>
-    </div>
-
-    <aside class="justify-self-center md:justify-self-end">
-      <div class="overflow-hidden rounded-xl border border-slate-200 shadow-sm max-w-[320px]">
-        <Image src={raul} alt="Raúl Rosales" class="w-full object-cover" style="max-height: 360px;" />
-        <div class="p-4">
-          <p class="font-semibold">Raúl Rosales R.</p>
-          <p class="text-sm text-slate-600">Profesor de Artes Visuales</p>
+    <!-- Hero / Resumen -->
+    <section class="grid gap-8 md:grid-cols-[1fr,320px] items-start">
+        <div>
+            <h1 class="text-3xl sm:text-4xl font-bold tracking-tight">
+                Profesor de Artes Visuales y Tecnología Educativa
+            </h1>
+            <p class="mt-2 text-lg text-slate-700">Raúl Rosales R.</p>
+            <p class="mt-4 text-slate-700">
+                Con más de 20 años de experiencia como profesor de Artes
+                Visuales y Tecnología, he dedicado mi carrera a integrar de
+                manera innovadora el arte, la tecnología, el cine y el
+                pensamiento computacional en el ámbito educativo. Mi trayectoria
+                se ha desarrollado en diversos establecimientos de la Región
+                Metropolitana de Chile, donde he promovido metodologías activas
+                y colaborativas que fomentan la expresión visual, la creatividad
+                y el pensamiento crítico en los estudiantes.
+            </p>
+            <p class="mt-3 text-slate-700">
+                Mi formación de posgrado en Innovación Curricular y Evaluación
+                Educativa, junto con especializaciones en Educación Tecnológica
+                y capacitaciones constantes en desarrollo web, programación y
+                producción audiovisual, me ha permitido crear entornos de
+                aprendizaje enriquecidos con TIC, materiales didácticos
+                digitales y plataformas virtuales. He liderado proyectos
+                interdisciplinarios y formado a otros docentes en el uso
+                pedagógico de herramientas tecnológicas, siempre con el objetivo
+                de transformar la educación a través del arte y la innovación.
+            </p>
+            <p class="mt-3 text-slate-700">
+                Este espacio es un reflejo de mi labor docente y creativa, un
+                lugar donde el arte se convierte en una herramienta de
+                transformación educativa y personal. Bienvenidos.
+            </p>
         </div>
-      </div>
-    </aside>
-  </section>
 
-  <!-- Mi Compromiso -->
-  <section class="mt-10 rounded-xl border border-slate-200 p-6 bg-white">
-    <h2 class="text-xl font-semibold">Mi Compromiso</h2>
-    <p class="mt-3 text-slate-700">Potenciar la creatividad y la experimentación artística, integrando herramientas digitales, tecnología y cine para enriquecer la experiencia de aprendizaje. Busco estrategias que conecten el arte con el entorno, impulsando proyectos significativos en aula y comunidad.</p>
-    <div class="mt-5 grid gap-4 sm:grid-cols-3">
-      <div class="rounded-lg border border-slate-200 p-4">
-        <p class="font-medium">Aprendizaje basado en proyectos</p>
-        <p class="text-sm text-slate-600 mt-1">Propuestas prácticas con impacto y sentido para los estudiantes.</p>
-      </div>
-      <div class="rounded-lg border border-slate-200 p-4">
-        <p class="font-medium">Arte + Tecnología</p>
-        <p class="text-sm text-slate-600 mt-1">Integración de medios digitales, IA y audiovisual en procesos creativos.</p>
-      </div>
-      <div class="rounded-lg border border-slate-200 p-4">
-        <p class="font-medium">Vínculo con la comunidad</p>
-        <p class="text-sm text-slate-600 mt-1">Proyectos que dialogan con cultura local y territorios.</p>
-      </div>
-    </div>
-  </section>
+        <aside class="justify-self-center md:justify-self-end">
+            <div
+                class="overflow-hidden rounded-xl border border-slate-200 shadow-sm max-w-[320px]"
+            >
+                <Image
+                    src={raul}
+                    alt="Raúl Rosales"
+                    class="w-full object-cover"
+                    style="max-height: 360px;"
+                />
+                <div class="p-4">
+                    <p class="font-semibold">Raúl Rosales R.</p>
+                    <p class="text-sm text-slate-600">
+                        Profesor de Artes Visuales
+                    </p>
+                </div>
+            </div>
+        </aside>
+    </section>
 
-  <!-- Formación -->
-  <section class="mt-10 rounded-xl border border-slate-200 p-6 bg-white">
-    <h2 class="text-xl font-semibold">Formación Académica y Especializaciones</h2>
-    <ul class="mt-4 space-y-3">
-      <li class="flex gap-3">
-        <span class="shrink-0 rounded-md bg-sky-100 text-sky-700 px-2 py-0.5 text-xs font-medium">2013</span>
-        <p class="text-slate-700"><strong>Magíster en Innovación Curricular y Evaluación Educativa</strong>. Universidad del Desarrollo.</p>
-      </li>
-      <li class="flex gap-3">
-        <span class="shrink-0 rounded-md bg-sky-100 text-sky-700 px-2 py-0.5 text-xs font-medium">2009</span>
-        <p class="text-slate-700"><strong>Postítulo en Educación Tecnológica</strong>. Universidad Viña del Mar.</p>
-      </li>
-      <li class="flex gap-3">
-        <span class="shrink-0 rounded-md bg-sky-100 text-sky-700 px-2 py-0.5 text-xs font-medium">2005</span>
-        <p class="text-slate-700"><strong>Licenciado en Educación y Pedagogía en Artes Plásticas</strong>. Universidad Metropolitana de Ciencias de la Educación.</p>
-      </li>
-    </ul>
-  </section>
+    <!-- Mi Compromiso -->
+    <section class="mt-10 rounded-xl border border-slate-200 p-6 bg-white">
+        <h2 class="text-xl font-semibold">Mi Compromiso</h2>
+        <p class="mt-3 text-slate-700">
+            Potenciar la creatividad y la experimentación artística, integrando
+            herramientas digitales, tecnología y cine para enriquecer la
+            experiencia de aprendizaje. Busco estrategias que conecten el arte
+            con el entorno, impulsando proyectos significativos en aula y
+            comunidad.
+        </p>
+        <div class="mt-5 grid gap-4 sm:grid-cols-3">
+            <div class="rounded-lg border border-slate-200 p-4">
+                <p class="font-medium">Aprendizaje basado en proyectos</p>
+                <p class="text-sm text-slate-600 mt-1">
+                    Propuestas prácticas con impacto y sentido para los
+                    estudiantes.
+                </p>
+            </div>
+            <div class="rounded-lg border border-slate-200 p-4">
+                <p class="font-medium">Arte + Tecnología</p>
+                <p class="text-sm text-slate-600 mt-1">
+                    Integración de medios digitales, IA y audiovisual en
+                    procesos creativos.
+                </p>
+            </div>
+            <div class="rounded-lg border border-slate-200 p-4">
+                <p class="font-medium">Vínculo con la comunidad</p>
+                <p class="text-sm text-slate-600 mt-1">
+                    Proyectos que dialogan con cultura local y territorios.
+                </p>
+            </div>
+        </div>
+    </section>
 
-  <!-- Capacitaciones -->
-  <section class="mt-10 rounded-xl border border-slate-200 p-6 bg-white">
-    <h2 class="text-xl font-semibold">Capacitaciones y Cursos Destacados</h2>
-    <div class="mt-4 grid gap-3 sm:grid-cols-2">
-      <div class="rounded-lg border border-slate-200 p-4">
-        <p class="text-sm text-slate-500">2025</p>
-        <p class="font-medium">Diplomado en Formación de Instructores en Habilidades y Técnicas de Enseñanza-Aprendizaje</p>
-      </div>
-      <div class="rounded-lg border border-slate-200 p-4">
-        <p class="text-sm text-slate-500">2025</p>
-        <p class="font-medium">Enseñanza de Artes Visuales a través de herramientas digitales con Inteligencia Artificial</p>
-      </div>
-      <div class="rounded-lg border border-slate-200 p-4">
-        <p class="text-sm text-slate-500">2025</p>
-        <p class="font-medium">Técnicas de Aprendizaje Activo con Uso de Herramientas Digitales</p>
-      </div>
-      <div class="rounded-lg border border-slate-200 p-4">
-        <p class="text-sm text-slate-500">2024</p>
-        <p class="font-medium">Cine para Educadores: Apreciación y Creación — Cineteca Nacional de Chile</p>
-      </div>
-      <div class="rounded-lg border border-slate-200 p-4">
-        <p class="text-sm text-slate-500">2024</p>
-        <p class="font-medium">Estrategias de Comprensión Lectora — Educrea</p>
-      </div>
-      <div class="rounded-lg border border-slate-200 p-4">
-        <p class="text-sm text-slate-500">2023</p>
-        <p class="font-medium">Metodologías activas con uso de TICs — Universidad de la Frontera</p>
-      </div>
-    </div>
-  </section>
+    <!-- Formación -->
+    <section class="mt-10 rounded-xl border border-slate-200 p-6 bg-white">
+        <h2 class="text-xl font-semibold">
+            Formación Académica y Especializaciones
+        </h2>
+        <ul class="mt-4 space-y-3">
+            <li class="flex gap-3">
+                <span
+                    class="shrink-0 rounded-md bg-sky-100 text-sky-700 px-2 py-0.5 text-xs font-medium"
+                    >2013</span
+                >
+                <p class="text-slate-700">
+                    <strong
+                        >Magíster en Innovación Curricular y Evaluación
+                        Educativa</strong
+                    >. Universidad del Desarrollo.
+                </p>
+            </li>
+            <li class="flex gap-3">
+                <span
+                    class="shrink-0 rounded-md bg-sky-100 text-sky-700 px-2 py-0.5 text-xs font-medium"
+                    >2009</span
+                >
+                <p class="text-slate-700">
+                    <strong>Postítulo en Educación Tecnológica</strong>.
+                    Universidad Viña del Mar.
+                </p>
+            </li>
+            <li class="flex gap-3">
+                <span
+                    class="shrink-0 rounded-md bg-sky-100 text-sky-700 px-2 py-0.5 text-xs font-medium"
+                    >2005</span
+                >
+                <p class="text-slate-700">
+                    <strong
+                        >Licenciado en Educación y Pedagogía en Artes Plásticas</strong
+                    >. Universidad Metropolitana de Ciencias de la Educación.
+                </p>
+            </li>
+        </ul>
+    </section>
 
-  <!-- Áreas de especialización -->
-  <section class="mt-10">
-    <h2 class="text-xl font-semibold">Áreas de Especialización</h2>
-    <div class="mt-4 grid gap-4 md:grid-cols-3">
-      <div class="rounded-xl border border-slate-200 p-5 bg-white">
-        <h3 class="font-semibold">Arte contemporáneo y educación artística</h3>
-        <p class="mt-2 text-slate-700">Exploración de técnicas modernas y su aplicación en la educación.</p>
-      </div>
-      <div class="rounded-xl border border-slate-200 p-5 bg-white">
-        <h3 class="font-semibold">Producción audiovisual y cine independiente</h3>
-        <p class="mt-2 text-slate-700">Creación de proyectos audiovisuales con enfoque educativo.</p>
-      </div>
-      <div class="rounded-xl border border-slate-200 p-5 bg-white">
-        <h3 class="font-semibold">Desarrollo web y tecnología educativa</h3>
-        <p class="mt-2 text-slate-700">Uso de herramientas digitales para enriquecer el aprendizaje.</p>
-      </div>
-    </div>
-  </section>
+    <!-- Capacitaciones -->
+    <section class="mt-10 rounded-xl border border-slate-200 p-6 bg-white">
+        <h2 class="text-xl font-semibold">
+            Capacitaciones y Cursos Destacados
+        </h2>
+        <div class="mt-4 grid gap-3 sm:grid-cols-2">
+            <div class="rounded-lg border border-slate-200 p-4">
+                <p class="text-sm text-slate-500">2025</p>
+                <p class="font-medium">
+                    Diplomado en Formación de Instructores en Habilidades y
+                    Técnicas de Enseñanza-Aprendizaje
+                </p>
+            </div>
+            <div class="rounded-lg border border-slate-200 p-4">
+                <p class="text-sm text-slate-500">2025</p>
+                <p class="font-medium">
+                    Enseñanza de Artes Visuales a través de herramientas
+                    digitales con Inteligencia Artificial
+                </p>
+            </div>
+            <div class="rounded-lg border border-slate-200 p-4">
+                <p class="text-sm text-slate-500">2025</p>
+                <p class="font-medium">
+                    Técnicas de Aprendizaje Activo con Uso de Herramientas
+                    Digitales
+                </p>
+            </div>
+            <div class="rounded-lg border border-slate-200 p-4">
+                <p class="text-sm text-slate-500">2024</p>
+                <p class="font-medium">
+                    Cine para Educadores: Apreciación y Creación — Cineteca
+                    Nacional de Chile
+                </p>
+            </div>
+            <div class="rounded-lg border border-slate-200 p-4">
+                <p class="text-sm text-slate-500">2024</p>
+                <p class="font-medium">
+                    Estrategias de Comprensión Lectora — Educrea
+                </p>
+            </div>
+            <div class="rounded-lg border border-slate-200 p-4">
+                <p class="text-sm text-slate-500">2023</p>
+                <p class="font-medium">
+                    Metodologías activas con uso de TICs — Universidad de la
+                    Frontera
+                </p>
+            </div>
+        </div>
+    </section>
 
-  <!-- Timeline de trayectoria (laboral) -->
-  <section class="mt-12">
-    <Timeline
-      title="Trayectoria"
-      items={[
-        { title: 'Profesor titular de Artes Visuales', subtitle: 'Liceo Municipal Pablo Neruda', period: '2024 – Actualidad' },
-        { title: 'Profesor de Artes Visuales y Tecnología', subtitle: 'Colegio María Griselda Valle – El Bosque', period: '2020 – 2023' },
-        { title: 'Profesor de Tecnología', subtitle: 'Colegio Politécnico Eyzaguirre – Puente Alto', period: '2019' },
-        { title: 'Profesor de Artes Visuales y Tecnología', subtitle: 'Instituto La Salle – La Florida', period: '2017 – 2019' },
-        { title: 'Profesor de Tecnología', subtitle: 'Colegio Altazor – Puente Alto', period: '2016' },
-        { title: 'Profesor de Artes Visuales', subtitle: 'Colegio Marista Marcelino Champagnat – La Pintana', period: '2015' },
-        { title: 'Profesor de Artes Visuales y Coordinador Enlaces MINEDUC', subtitle: 'Colegio Nova Terra – La Florida', period: '2014 – 2016' },
-  { title: 'Profesor de Artes Visuales y Tecnología', subtitle: 'Colegio King School Cordillera – La Pintana', period: '2011 – 2013' },
-        { title: 'Profesor de Artes Visuales', subtitle: 'Colegio Nahuel – Paine', period: '2008' },
-        { title: 'Profesor de Artes Visuales', subtitle: 'Liceo A/131 – Buin', period: '2005 – 2010' },
-        { title: 'Profesor de Artes Visuales', subtitle: 'Liceo E/823 “Gregorio Morales M.” – Hospital, Paine', period: '2005 – 2006' }
-      ]}
-    />
-  </section>
+    <!-- Áreas de especialización -->
+    <section class="mt-10">
+        <h2 class="text-xl font-semibold">Áreas de Especialización</h2>
+        <div class="mt-4 grid gap-4 md:grid-cols-3">
+            <div class="rounded-xl border border-slate-200 p-5 bg-white">
+                <h3 class="font-semibold">
+                    Arte contemporáneo y educación artística
+                </h3>
+                <p class="mt-2 text-slate-700">
+                    Exploración de técnicas modernas y su aplicación en la
+                    educación.
+                </p>
+            </div>
+            <div class="rounded-xl border border-slate-200 p-5 bg-white">
+                <h3 class="font-semibold">
+                    Producción audiovisual y cine independiente
+                </h3>
+                <p class="mt-2 text-slate-700">
+                    Creación de proyectos audiovisuales con enfoque educativo.
+                </p>
+            </div>
+            <div class="rounded-xl border border-slate-200 p-5 bg-white">
+                <h3 class="font-semibold">
+                    Desarrollo web y tecnología educativa
+                </h3>
+                <p class="mt-2 text-slate-700">
+                    Uso de herramientas digitales para enriquecer el
+                    aprendizaje.
+                </p>
+            </div>
+        </div>
+    </section>
 
+    <!-- Timeline de trayectoria (laboral) -->
+    <section class="mt-12">
+        <Timeline
+            title="Trayectoria"
+            items={[
+                {
+                    title: "Profesor titular de Artes Visuales",
+                    subtitle: "Liceo Municipal Pablo Neruda",
+                    period: "2024 – Actualidad",
+                },
+                {
+                    title: "Profesor de Artes Visuales y Tecnología",
+                    subtitle: "Colegio María Griselda Valle – El Bosque",
+                    period: "2020 – 2023",
+                },
+                {
+                    title: "Profesor de Tecnología",
+                    subtitle: "Colegio Politécnico Eyzaguirre – Puente Alto",
+                    period: "2019",
+                },
+                {
+                    title: "Profesor de Artes Visuales y Tecnología",
+                    subtitle: "Instituto La Salle – La Florida",
+                    period: "2017 – 2019",
+                },
+                {
+                    title: "Profesor de Tecnología",
+                    subtitle: "Colegio Altazor – Puente Alto",
+                    period: "2016",
+                },
+                {
+                    title: "Profesor de Artes Visuales",
+                    subtitle:
+                        "Colegio Marista Marcelino Champagnat – La Pintana",
+                    period: "2015",
+                },
+                {
+                    title: "Profesor de Artes Visuales y Coordinador Enlaces MINEDUC",
+                    subtitle: "Colegio Nova Terra – La Florida",
+                    period: "2014 – 2016",
+                },
+                {
+                    title: "Profesor de Artes Visuales y Tecnología",
+                    subtitle: "Colegio King School Cordillera – La Pintana",
+                    period: "2011 – 2013",
+                },
+
+                {
+                    title: "Profesor de Artes Visuales",
+                    subtitle: "Liceo A/131 “Haydée Azócar Mansilla” – Buin",
+                    period: "2005 – 2010",
+                },
+                {
+                    title: "Profesor de Artes Visuales",
+                    subtitle: "Colegio Nahuel – Paine",
+                    period: "2008",
+                },
+                {
+                    title: "Profesor de Artes Visuales",
+                    subtitle:
+                        "Liceo E/823 “Gregorio Morales M.” – Hospital, Paine",
+                    period: "2005 – 2006",
+                },
+            ]}
+        />
+    </section>
 </BaseLayout>
