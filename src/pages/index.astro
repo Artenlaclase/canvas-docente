@@ -1,6 +1,13 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
 import Header from "../components/Header.astro";
+import { Image } from "astro:assets";
+import pintura from "../assets/images/pintura.jpg";
+import collage from "../assets/images/collage.jpg";
+import audiovisual from "../assets/images/audiovisual.jpg";
+import mosaico from "../assets/images/mosaico.jpg";
+import volumen from "../assets/images/volumen.jpg";
+import mascara from "../assets/images/mascara.jpg";
 ---
 
 <BaseLayout title="Canvas Docente" description="20 años de artes visuales en aula">
@@ -17,22 +24,22 @@ import Header from "../components/Header.astro";
 					<a href="/blog" class="inline-flex items-center justify-center rounded-md border border-slate-300 px-5 py-2.5 text-slate-800 hover:bg-slate-50">Leer blog</a>
 				</div>
 			</div>
-			<div class="grid grid-cols-3 gap-3">
-				<img src="/src/assets/images/pintura.jpg" alt="Pintura" class="rounded-lg object-cover h-28 sm:h-40 w-full" />
-				<img src="/src/assets/images/collage.jpg" alt="Collage" class="rounded-lg object-cover h-28 sm:h-40 w-full" />
-				<img src="/src/assets/images/audiovisual.jpg" alt="Audiovisual" class="rounded-lg object-cover h-28 sm:h-40 w-full" />
-				<img src="/src/assets/images/mosaico.jpg" alt="Mosaico" class="rounded-lg object-cover h-28 sm:h-40 w-full" />
-				<img src="/src/assets/images/volumen.jpg" alt="Volumen" class="rounded-lg object-cover h-28 sm:h-40 w-full" />
-				<img src="/src/assets/images/mascara.jpg" alt="Máscaras" class="rounded-lg object-cover h-28 sm:h-40 w-full" />
-			</div>
+							<div class="grid grid-cols-3 gap-3">
+								<Image src={pintura} alt="Pintura" class="rounded-lg object-cover h-28 sm:h-40 w-full" />
+								<Image src={collage} alt="Collage" class="rounded-lg object-cover h-28 sm:h-40 w-full" />
+								<Image src={audiovisual} alt="Audiovisual" class="rounded-lg object-cover h-28 sm:h-40 w-full" />
+								<Image src={mosaico} alt="Mosaico" class="rounded-lg object-cover h-28 sm:h-40 w-full" />
+								<Image src={volumen} alt="Volumen" class="rounded-lg object-cover h-28 sm:h-40 w-full" />
+								<Image src={mascara} alt="Máscaras" class="rounded-lg object-cover h-28 sm:h-40 w-full" />
+							</div>
 		</div>
 	</section>
 
 	<section class="pt-4">
 		<h2 class="text-xl font-semibold mb-3">Explora por técnica</h2>
 		<div class="flex flex-wrap gap-2">
-			{['Pintura','Collage','Audiovisual','Mosaico','Volumen','Máscaras','Lámparas','Diseño','Dibujo'].map((t) => (
-				<a href={`/galeria/${encodeURIComponent(t)}`} class="rounded-full border border-slate-300 px-4 py-1.5 text-sm hover:bg-slate-50">{t}</a>
+					{['Pintura','Collage','Audiovisual','Mosaico','Volumen','Máscaras','Lámparas','Diseño','Dibujo'].map((t) => (
+						<a href={`/galeria/tecnica/${encodeURIComponent(t)}`} class="rounded-full border border-slate-300 px-4 py-1.5 text-sm hover:bg-slate-50">{t}</a>
 			))}
 		</div>
 	</section>

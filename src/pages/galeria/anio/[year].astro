@@ -1,0 +1,15 @@
+---
+import BaseLayout from "../../../layouts/BaseLayout.astro";
+import Header from "../../../components/Header.astro";
+import Gallery from "../../../components/Gallery.astro";
+import { getCollection } from 'astro:content';
+
+const { year } = Astro.params;
+const all = await getCollection('galeria');
+const items = all.filter((p) => String(p.data.year) === String(year));
+---
+<BaseLayout title={`Año ${year} | Galería`}>
+  <Fragment slot="header"><Header /></Fragment>
+  <h1 class="text-2xl font-semibold mb-6">Año {year}</h1>
+  <Gallery items={items} />
+</BaseLayout>
