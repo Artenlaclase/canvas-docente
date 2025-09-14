@@ -51,6 +51,13 @@
 			"command": "npm run -s astro check",
 			"isBackground": false,
 			"group": "build"
+		},
+		{
+			"label": "Install dotenv",
+			"type": "shell",
+			"command": "npm install",
+			"isBackground": false,
+			"group": "build"
 		}
 	]
 }
