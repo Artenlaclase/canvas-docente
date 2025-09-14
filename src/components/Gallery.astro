@@ -5,7 +5,11 @@ const { items = [] } = Astro.props as { items: Array<any> };
 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
   {items.map((it) => (
     <a href={it.url} class="group block overflow-hidden rounded-lg border border-slate-200 hover:shadow-md transition">
-      <img src={it.data.cover ?? it.data.image ?? ''} alt={it.data.title} loading="lazy" class="aspect-[4/3] w-full object-cover group-hover:scale-[1.02] transition" />
+      {it.data.cover || it.data.image ? (
+        <img src={it.data.cover ?? it.data.image} alt={it.data.title} loading="lazy" class="aspect-[4/3] w-full object-cover group-hover:scale-[1.02] transition" />
+      ) : (
+        <div class="aspect-[4/3] w-full bg-slate-100 flex items-center justify-center text-slate-400">Sin imagen</div>
+      )}
       <div class="p-4">
         <h3 class="font-semibold">{it.data.title}</h3>
         <p class="text-xs text-slate-500 mt-1">{it.data.technique} · {it.data.year}</p>
