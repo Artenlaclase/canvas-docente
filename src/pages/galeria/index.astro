@@ -3,6 +3,7 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
 import Header from "../../components/Header.astro";
 import Gallery from "../../components/Gallery.astro";
 import TechniqueFilter from "../../components/TechniqueFilter.astro";
+import TechniqueGallery from "../../components/TechniqueGallery.astro";
 import { getCollection } from 'astro:content';
 import { getUnique, sortDescNumeric } from "../../utils/imageTools";
 
@@ -21,6 +22,8 @@ const years = sortDescNumeric(getUnique(all.map((p) => p.data.year)));
 <BaseLayout title="Galería | Canvas Docente">
   <Fragment slot="header"><Header /></Fragment>
   <h1 class="text-2xl font-semibold mb-4">Galería</h1>
+  <TechniqueGallery />
+  <h2 class="text-lg font-semibold mt-8 mb-3">Filtrar resultados</h2>
   <TechniqueFilter techniques={techniques} selected={technique} years={years} selectedYear={yearParam} />
   <Gallery items={filtered} />
 </BaseLayout>
