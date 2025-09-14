@@ -12,9 +12,9 @@ const { title = 'Canvas Docente', description = '20 años de artes visuales', la
     <meta name="generator" content={Astro.generator} />
     <title>{title}</title>
   </head>
-  <body class="min-h-screen bg-white text-slate-900 antialiased">
+  <body class="min-h-screen bg-white text-slate-900 antialiased flex flex-col">
     <slot name="header" />
-    <main class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
+    <main class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8 flex-1 w-full">
       <slot />
     </main>
     {Astro.slots.has('footer') ? (
