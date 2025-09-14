@@ -9,94 +9,201 @@ interface Props {
 const { images, altBase = 'Imagen de galería' } = Astro.props as Props;
 
 // Build src list and indices for client script
-const items = images.map((img, idx) => ({ idx, src: (img as any).src ?? img, w: (img as any).width, h: (img as any).height }));
+const items = images.map((img, idx) => ({ idx, src: (img as any).src ?? img, w: (img as any).width, h: (img as any).height, caption: `${altBase} ${idx + 1}` }));
 ---
-<div class="lb-root" data-items={JSON.stringify(items)}>
+<div class="lb-root">
   <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
     {items.map((it) => (
-      <button type="button" class="group overflow-hidden rounded-lg border border-slate-200 focus:outline-none" data-open-index={it.idx} aria-label={`Abrir ${altBase} ${it.idx + 1}`}>
+      <button type="button" class="group overflow-hidden rounded-lg border border-slate-200 focus:outline-none cursor-zoom-in" data-open-index={it.idx} aria-label={`Abrir ${altBase} ${it.idx + 1}`}>
         <Image src={images[it.idx]} alt={`${altBase} ${it.idx + 1}`} class="aspect-[4/3] w-full object-cover group-hover:scale-[1.02] transition" />
       </button>
     ))}
   </div>
 
   {/* Lightbox Modal */}
-  <div id="lightbox" class="fixed inset-0 z-50 hidden" aria-hidden="true">
+  <div id="lightbox" class="fixed inset-0 z-[9999] hidden" aria-hidden="true">
     <div id="backdrop" class="absolute inset-0 bg-black/70"></div>
     <div class="absolute inset-0 flex items-center justify-center p-4">
       <div class="relative w-full max-w-6xl">
-        <button id="closeBtn" class="absolute -top-10 right-0 text-white/90 hover:text-white text-2xl" aria-label="Cerrar">×</button>
         <div class="relative bg-black rounded-lg overflow-hidden">
+          <button id="closeBtn" class="absolute top-2 right-2 h-10 w-10 grid place-items-center rounded-full bg-black/50 text-white text-xl hover:bg-black/70" aria-label="Cerrar">×</button>
           <button id="prevBtn" class="absolute left-2 top-1/2 -translate-y-1/2 z-10 h-10 w-10 rounded-full bg-black/40 text-white hover:bg-black/60">‹</button>
           <button id="nextBtn" class="absolute right-2 top-1/2 -translate-y-1/2 z-10 h-10 w-10 rounded-full bg-black/40 text-white hover:bg-black/60">›</button>
           <div class="w-[min(100vw,96rem)] max-h-[95vh] flex items-center justify-center">
             <img id="lightboxImage" class="max-h-[95vh] w-auto object-contain select-none" alt={altBase} />
           </div>
         </div>
-        <div id="counter" class="mt-2 text-center text-white/90"></div>
+  <div id="counter" class="mt-2 text-center text-white/90"></div>
+  <div id="caption" class="mt-1 text-center text-white/80 text-sm"></div>
       </div>
     </div>
   </div>
 
+  <script type="application/json" data-items>{JSON.stringify(items)}</script>
   <script>
   // @ts-nocheck
-  (function(){
-    const cs = document.currentScript;
-    const root = cs && cs.closest('.lb-root');
-    if (!root) return;
-    const data = root.getAttribute('data-items') || '[]';
-    const items = JSON.parse(data);
-  /** @type {number} */
-  let current = 0;
-  const lightbox = root.querySelector('#lightbox');
-  const imgEl = /** @type {HTMLImageElement|null} */(root.querySelector('#lightboxImage'));
-  const closeBtn = /** @type {HTMLButtonElement|null} */(root.querySelector('#closeBtn'));
-  const nextBtn = /** @type {HTMLButtonElement|null} */(root.querySelector('#nextBtn'));
-  const prevBtn = /** @type {HTMLButtonElement|null} */(root.querySelector('#prevBtn'));
-  const backdrop = root.querySelector('#backdrop');
-  const counter = /** @type {HTMLElement|null} */(root.querySelector('#counter'));
+    (function(){
+      function init(root){
+        const jsonEl = root.querySelector('script[data-items]');
+        const dataText = jsonEl ? (jsonEl.textContent || '[]') : '[]';
+        let items = [];
+        try { items = JSON.parse(dataText); } catch { items = []; }
+        if (!Array.isArray(items)) items = [];
+        // Fallback: si no hay items desde JSON, construir desde las miniaturas
+        if (items.length === 0) {
+          items = Array.from(root.querySelectorAll('[data-open-index] img')).map((img, idx) => ({
+            idx,
+            src: img.getAttribute('src') || '',
+            caption: img.getAttribute('alt') || ''
+          })).filter(x => x.src);
+        }
+        try { console.debug('[Lightbox] items', items.length); } catch {}
+        /** @type {number} */
+        let current = 0;
+        // Create portal of the lightbox into body to avoid stacking context issues
+        const tmpl = root.querySelector('#lightbox');
+        let lightbox = tmpl;
+        if (tmpl && tmpl.parentElement !== document.body) {
+          lightbox = tmpl.cloneNode(true);
+          document.body.appendChild(lightbox);
+        }
+        const scope = lightbox || document;
+        const imgEl = /** @type {HTMLImageElement|null} */(scope.querySelector('#lightboxImage'));
+  const closeBtn = /** @type {HTMLButtonElement|null} */(scope.querySelector('#closeBtn'));
+        const nextBtn = /** @type {HTMLButtonElement|null} */(scope.querySelector('#nextBtn'));
+        const prevBtn = /** @type {HTMLButtonElement|null} */(scope.querySelector('#prevBtn'));
+        const backdrop = scope.querySelector('#backdrop');
+  const counter = /** @type {HTMLElement|null} */(scope.querySelector('#counter'));
+  const captionEl = /** @type {HTMLElement|null} */(scope.querySelector('#caption'));
+        // Zoom/Pan state
+        let scale = 1;
+        let offsetX = 0;
+        let offsetY = 0;
+        let isPanning = false;
+        let startX = 0;
+        let startY = 0;
 
-  /** @param {number} index */
-  function openAt(index){
-      current = index;
-      update();
-      if (lightbox) lightbox.classList.remove('hidden');
-      document.body.style.overflow = 'hidden';
-    }
-    function close(){
-      if (lightbox) lightbox.classList.add('hidden');
-      document.body.style.overflow = '';
-    }
-    function update(){
-      if (imgEl) imgEl.setAttribute('src', items[current].src);
-      if (counter) counter.textContent = `${current + 1} / ${items.length}`;
-    }
-    function next(){
-      current = (current + 1) % items.length;
-      update();
-    }
-    function prev(){
-      current = (current - 1 + items.length) % items.length;
-      update();
-    }
+        function resetZoom(){
+          scale = 1; offsetX = 0; offsetY = 0; applyTransform();
+        }
+        function applyTransform(){
+          if (!imgEl) return;
+          imgEl.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${scale})`;
+          imgEl.style.transition = 'transform 120ms ease-out';
+          imgEl.style.cursor = scale > 1 ? 'grab' : 'default';
+        }
 
-    root.querySelectorAll('[data-open-index]').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const attr = btn.getAttribute('data-open-index');
-        const idx = attr ? parseInt(attr, 10) : 0;
-        openAt(idx);
-      });
-    });
-    if (closeBtn) closeBtn.addEventListener('click', close);
-    if (backdrop) backdrop.addEventListener('click', close);
-    if (nextBtn) nextBtn.addEventListener('click', next);
-    if (prevBtn) prevBtn.addEventListener('click', prev);
-    document.addEventListener('keydown', (e) => {
-      if (lightbox && lightbox.classList.contains('hidden')) return;
-      if (e.key === 'Escape') close();
-      if (e.key === 'ArrowRight') next();
-      if (e.key === 'ArrowLeft') prev();
-    });
-  })();
+        /** @param {number} index */
+        function openAt(index){
+          if (!Array.isArray(items) || items.length === 0) return;
+          try { console.debug('[Lightbox] openAt', index); } catch {}
+          current = index;
+          update();
+          if (lightbox) {
+            lightbox.classList.remove('hidden');
+            lightbox.setAttribute('aria-hidden','false');
+            lightbox.style.display = 'block';
+          }
+          document.body.style.overflow = 'hidden';
+        }
+        function close(){
+          if (lightbox) {
+            lightbox.classList.add('hidden');
+            lightbox.setAttribute('aria-hidden','true');
+            lightbox.style.display = 'none';
+          }
+          document.body.style.overflow = '';
+        }
+        function update(){
+          if (imgEl) imgEl.setAttribute('src', items[current].src);
+          if (counter) counter.textContent = `${current + 1} / ${items.length}`;
+          if (captionEl) captionEl.textContent = items[current].caption || '';
+          resetZoom();
+        }
+        function next(){
+          current = (current + 1) % items.length;
+          update();
+        }
+        function prev(){
+          current = (current - 1 + items.length) % items.length;
+          update();
+        }
+
+        // Delegación de eventos para clic en miniaturas
+        const btns = root.querySelectorAll('[data-open-index]');
+        try { console.debug('[Lightbox] buttons', btns.length); } catch {}
+        root.addEventListener('click', (e) => {
+          const el = e.target && /** @type {Element} */(e.target).closest ? /** @type {Element} */(e.target).closest('[data-open-index]') : null;
+          if (!el) return;
+          try { console.debug('[Lightbox] thumb click'); } catch {}
+          const attr = el.getAttribute('data-open-index');
+          const idx = attr ? parseInt(attr, 10) : 0;
+          openAt(idx);
+        });
+        if (closeBtn) closeBtn.addEventListener('click', close);
+        if (backdrop) backdrop.addEventListener('click', close);
+        // Opcional: clic en el contenedor negro fuera de la imagen también cierra
+        const blackContainer = scope.querySelector('.bg-black');
+        if (blackContainer) blackContainer.addEventListener('click', (e) => {
+          // No cerrar si se hace clic en la imagen o en controles
+          const target = e.target;
+          if (target && (/** @type {Element} */(target)).closest('#lightboxImage') ) return;
+          if (target && (/** @type {Element} */(target)).closest('#prevBtn, #nextBtn, #closeBtn')) return;
+          close();
+        });
+        if (nextBtn) nextBtn.addEventListener('click', next);
+        if (prevBtn) prevBtn.addEventListener('click', prev);
+        document.addEventListener('keydown', (e) => {
+          if (lightbox && lightbox.classList.contains('hidden')) return;
+          if (e.key === 'Escape') close();
+          if (e.key === 'ArrowRight') next();
+          if (e.key === 'ArrowLeft') prev();
+        });
+
+        // Double click to toggle zoom
+        if (imgEl) imgEl.addEventListener('dblclick', () => {
+          scale = scale > 1 ? 1 : 2;
+          offsetX = 0; offsetY = 0;
+          applyTransform();
+        });
+        // Wheel to zoom (center-based)
+        if (imgEl) imgEl.addEventListener('wheel', (e) => {
+          e.preventDefault();
+          const delta = Math.sign(e.deltaY);
+          const prevScale = scale;
+          scale = Math.min(5, Math.max(1, scale + (delta > 0 ? -0.2 : 0.2)));
+          if (scale === 1) { offsetX = 0; offsetY = 0; }
+          // Simple center zoom; for cursor-anchored zoom we'd adjust offsets based on mouse position
+          if (prevScale !== scale) applyTransform();
+        }, { passive: false });
+        // Drag to pan when zoomed
+        if (imgEl) imgEl.addEventListener('mousedown', (e) => {
+          if (scale <= 1) return;
+          isPanning = true; startX = e.clientX - offsetX; startY = e.clientY - offsetY;
+          imgEl.style.cursor = 'grabbing';
+        });
+        document.addEventListener('mousemove', (e) => {
+          if (!isPanning) return;
+          offsetX = e.clientX - startX; offsetY = e.clientY - startY;
+          applyTransform();
+        });
+        document.addEventListener('mouseup', () => {
+          isPanning = false; if (imgEl) imgEl.style.cursor = 'grab';
+        });
+      }
+
+      function initAll(){
+        document.querySelectorAll('.lb-root').forEach((root) => {
+          if (root.getAttribute('data-inited') === '1') return;
+          root.setAttribute('data-inited','1');
+          try { console.debug('[Lightbox] init'); } catch {}
+          init(root);
+        });
+      }
+
+      if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initAll);
+      else initAll();
+      window.addEventListener('beforeunload', () => { document.body.style.overflow = ''; });
+    })();
   </script>
 </div>
