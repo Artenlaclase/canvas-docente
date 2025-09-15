@@ -118,6 +118,42 @@ tags: ["reflexión"]
 Cuerpo del post...
 ```
 
+#### Portadas (cover) del blog
+
+Puedes definir la portada (`cover`) de tres formas:
+
+1) Imagen local en `src/assets/images` (recomendado)
+
+```md
+---
+title: "Mi post"
+date: 2025-01-01
+cover: "../../assets/images/mi-portada.webp"
+---
+```
+
+2) Imagen en `public/` (ruta absoluta desde la raíz)
+
+```md
+---
+title: "Mi post"
+date: 2025-01-01
+cover: "/images/mi-portada.webp" # si está en public/images/mi-portada.webp
+---
+```
+
+3) URL externa
+
+```md
+---
+title: "Mi post"
+date: 2025-01-01
+cover: "https://example.com/mi-portada.jpg"
+---
+```
+
+El proyecto intenta resolver automáticamente imágenes locales bajo `src/assets` para optimizarlas y que funcionen tanto en `dev/preview` como en `build`. Si la ruta no se puede resolver como asset, se usa `<img>` como fallback.
+
 ### Notas
 - Los estilos de Tailwind están en `src/styles/global.css` y se importan en `BaseLayout.astro`.
 - Si ves advertencias en el editor sobre `@tailwind` o `@apply`, son del analizador estático del editor. En la compilación real de Astro se procesan con PostCSS/Tailwind.

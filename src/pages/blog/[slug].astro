@@ -1,6 +1,7 @@
 ---
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import Header from "../../components/Header.astro";
+import { Image } from 'astro:assets';
 import { getCollection } from 'astro:content';
 
 export const prerender = true;
@@ -17,7 +18,22 @@ const { Content } = await post.render();
   <Fragment slot="header"><Header /></Fragment>
   <article class="prose max-w-none">
     <h1>{post.data.title}</h1>
-    {post.data.cover && (<img src={post.data.cover} alt="" class="rounded-lg" />)}
+    {
+      post.data.cover && (() => {
+        const assets = import.meta.glob('../../assets/images/**/*', { eager: true, import: 'default' });
+        const coverPath = post.data.cover as string;
+        const looksLocal = coverPath.startsWith('/src/') || coverPath.startsWith('../') || coverPath.startsWith('./') || coverPath.startsWith('/');
+        const normalized = coverPath.startsWith('/src/') ? coverPath.slice(1) : coverPath;
+        const key = `../${normalized.replace(/^src\//, '')}`;
+        const resolved = assets[key];
+        if (import.meta.env.DEV && looksLocal && !resolved) {
+          console.warn(`[Blog post] No se pudo resolver la portada local: ${coverPath}. Asegúrate de que exista en src/assets y usa una ruta relativa, por ejemplo ../../assets/...`);
+        }
+        return resolved
+          ? (<Image src={resolved as any} alt={post.data.title} class="rounded-lg" />)
+          : (<img src={coverPath} alt={post.data.title} class="rounded-lg" loading="lazy" />);
+      })()
+    }
     <p class="text-sm text-slate-500">{new Date(post.data.date).toLocaleDateString('es')}</p>
     <Content />
   </article>

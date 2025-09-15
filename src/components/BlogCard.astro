@@ -1,10 +1,24 @@
 ---
+import { Image } from 'astro:assets';
 const { post } = Astro.props as { post: any };
+// Try to resolve local asset covers under src/assets via glob (so preview/dev finds them)
+const assets = import.meta.glob('../assets/images/**/*', { eager: true, import: 'default' });
+const coverPath = post.data.cover as string | undefined;
+const isLocal = coverPath?.startsWith('/') || coverPath?.startsWith('./') || coverPath?.startsWith('../');
+// Normalize possible absolute '/src/...' to project-relative
+const normalized = coverPath?.startsWith('/src/') ? coverPath.slice(1) : coverPath;
+const resolvedKey = normalized && `../${normalized.replace(/^src\//, '')}`;
+const resolved = resolvedKey && assets[resolvedKey];
+if (import.meta.env.DEV && coverPath && isLocal && !resolved) {
+  console.warn(`[BlogCard] No se pudo resolver la portada local: ${coverPath}. Asegúrate de que exista en src/assets y usa una ruta relativa, por ejemplo ../../assets/...`);
+}
 ---
 <a href={`/blog/${post.slug}`} class="group block rounded-lg overflow-hidden border border-slate-200 hover:shadow-md transition">
-  {post.data.cover && (
-    <img src={post.data.cover} alt={post.data.title} loading="lazy" class="aspect-[16/9] w-full object-cover group-hover:scale-[1.02] transition" />
-  )}
+  {coverPath && resolved ? (
+    <Image src={resolved as any} alt={post.data.title} class="aspect-[16/9] w-full object-cover group-hover:scale-[1.02] transition" />
+  ) : coverPath ? (
+    <img src={coverPath} alt={post.data.title} loading="lazy" class="aspect-[16/9] w-full object-cover group-hover:scale-[1.02] transition" />
+  ) : null}
   <div class="p-4">
     <h3 class="font-semibold">{post.data.title}</h3>
     <p class="text-sm text-slate-600 mt-1 line-clamp-2">{post.data.excerpt}</p>
