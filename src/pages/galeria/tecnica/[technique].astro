@@ -6,6 +6,7 @@ import LightboxGallery from "../../../components/LightboxGallery.astro";
 import { getCollection } from 'astro:content';
 import { Image } from 'astro:assets';
 
+export const prerender = true;
 export async function getStaticPaths() {
   // Generar páginas para todas las técnicas, aunque no existan entradas en la colección
   const techniques = [
@@ -22,9 +23,10 @@ export async function getStaticPaths() {
   return techniques.map((t) => ({ params: { technique: t }, props: { technique: t } }));
 }
 
-// En modo server (output: 'server'), getStaticPaths se ignora para páginas dinámicas.
-// Por eso, usar siempre Astro.params y decodificar el valor recibido en la URL.
-const technique = decodeURIComponent(Astro.params.technique ?? '');
+const fromProps = (Astro.props as { technique?: string }).technique;
+const fromParams = Astro.params.technique ? decodeURIComponent(Astro.params.technique) : undefined;
+const technique = fromProps ?? fromParams ?? '';
+
 const all = await getCollection('galeria');
 const items = all.filter((p) => p.data.technique === technique);
 

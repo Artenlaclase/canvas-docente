@@ -2,11 +2,20 @@
 import { getCollection } from 'astro:content';
 export const prerender = true;
 export async function getStaticPaths() {
-  const all = await getCollection('galeria');
-  const techniques = [...new Set(all.map((p) => String(p.data.technique)))];
+  // Generar redirects para todas las técnicas conocidas (compatibilidad con URLs antiguas)
+  const techniques = [
+    'Pintura',
+    'Collage',
+    'Audiovisual',
+    'Mosaico',
+    'Volumen',
+    'Máscaras',
+    'Lámparas',
+    'Diseño',
+    'Dibujo',
+  ];
   return techniques.map((t) => ({ params: { technique: t } }));
 }
 const { technique } = Astro.params;
 return Astro.redirect(`/galeria/tecnica/${encodeURIComponent(String(technique ?? ''))}`, 301);
----
 ---
