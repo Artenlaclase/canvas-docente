@@ -1,7 +1,7 @@
 ---
 title: "20 años educando a través del arte y la tecnología"
 excerpt: "Una trayectoria de innovación y creatividad"
-date: 2025-09-15
+date: 2025-07-15
 cover: "../../assets/images/experiencia.webp"
 tags: ["arte", "tecnología", "educación"]
 ---

@@ -12,47 +12,55 @@ export async function getStaticPaths() {
 const { post } = Astro.props as { post: any };
 if (!post) throw new Error('Post no encontrado');
 const { Content } = await post.render();
+// Resolver portada: assets locales bajo src/assets/images y retorno de URL string
+const assets = import.meta.glob('../../assets/images/**/*', { eager: true, import: 'default' }) as Record<string, any>;
+/**
+ * @param {string | undefined} path
+ * @returns {string | undefined}
+ */
+function resolveCoverPath(path: string | undefined): string | undefined {
+  if (!path) return undefined;
+  // /src/... -> clave '../../assets/...'
+  if (path.startsWith('/src/')) {
+    const key = '../..' + path.replace('/src', '');
+    const hit = assets[key];
+    if (hit) return typeof hit === 'string' ? hit : hit?.src;
+  }
+  // ...assets/images/...
+  const idx = path.indexOf('assets/images/');
+  if (idx !== -1) {
+    const tail = path.slice(idx);
+    const key = '../..' + '/' + tail.replace(/^assets\//, 'assets/');
+    const hit = assets[key];
+    if (hit) return typeof hit === 'string' ? hit : hit?.src;
+  }
+  // Búsqueda por nombre de archivo
+  const file = path.split('/').pop();
+  if (file) {
+    const matchKey = Object.keys(assets).find((k) => k.endsWith('/' + file));
+    if (matchKey) {
+      const hit = assets[matchKey];
+      return typeof hit === 'string' ? hit : hit?.src;
+    }
+  }
+  return undefined;
+}
 ---
 <BaseLayout title={`${post.data.title} | Blog`}>
   <Fragment slot="header"><Header /></Fragment>
   <article class="prose max-w-none">
     <h1>{post.data.title}</h1>
-    {
-      post.data.cover && (() => {
-        const assets = import.meta.glob('../../assets/images/**/*', { eager: true, import: 'default' });
-        const coverPath = post.data.cover;
-        function resolveCover(path) {
-          if (!path) return undefined;
-          if (path.startsWith('/src/')) {
-            // Glob keys are '../../assets/images/...'
-            const key = '../..' + path.replace('/src', '');
-            if (assets[key]) return assets[key];
-          }
-          const idx = path.indexOf('assets/images/');
-          if (idx !== -1) {
-            const tail = path.slice(idx);
-            const key = '../..' + '/' + tail.replace(/^assets\//, 'assets/');
-            if (assets[key]) return assets[key];
-          }
-          const file = path.split('/').pop();
-          if (file) {
-            const match = Object.keys(assets).find((k) => k.endsWith('/' + file));
-            if (match) return assets[match];
-          }
-          return undefined;
-        }
-        const resolved = resolveCover(coverPath);
-        const resolvedUrl = typeof resolved === 'string'
-          ? resolved
-          : (resolved && typeof resolved === 'object' && 'src' in resolved ? resolved.src : undefined);
-        if (import.meta.env.DEV && (/^(\/|\.\/|\.\.\/)/.test(coverPath) || coverPath.startsWith('/src/')) && !resolved) {
-          console.warn(`[Blog post] No se pudo resolver la portada local: ${coverPath}. Asegúrate de que exista en src/assets/images y usa una ruta relativa, por ejemplo ../../assets/images/...`);
-        }
-        return resolvedUrl
-          ? (<img src={resolvedUrl} alt={post.data.title} class="rounded-lg" loading="lazy" />)
-          : (<img src={coverPath} alt={post.data.title} class="rounded-lg" loading="lazy" />);
-      })()
-    }
+    {(() => {
+      const coverPath = post.data.cover as string | undefined;
+      const resolvedUrl = resolveCoverPath(coverPath);
+      if (import.meta.env.DEV && coverPath && (/^(\/.|\.\/|\.\.\/)/.test(coverPath) || coverPath.startsWith('/src/')) && !resolvedUrl) {
+        console.warn(`[Blog post] No se pudo resolver la portada local: ${coverPath}. Asegúrate de que exista en src/assets/images y usa una ruta relativa, por ejemplo ../../assets/images/...`);
+      }
+      const finalSrc = (resolvedUrl || coverPath || '') + '';
+      return coverPath ? (
+        <img src={finalSrc} alt={post.data.title} class="rounded-lg" loading="lazy" />
+      ) : null;
+    })()}
     <p class="text-sm text-slate-500">{new Date(post.data.date).toLocaleDateString('es')}</p>
     <Content />
   </article>
