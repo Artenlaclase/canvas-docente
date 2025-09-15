@@ -58,6 +58,27 @@
 			"command": "npm install",
 			"isBackground": false,
 			"group": "build"
+		},
+		{
+			"label": "Install node adapter",
+			"type": "shell",
+			"command": "npm install",
+			"isBackground": false,
+			"group": "build"
+		},
+		{
+			"label": "Install node adapter (retry)",
+			"type": "shell",
+			"command": "npm install",
+			"isBackground": false,
+			"group": "build"
+		},
+		{
+			"label": "Build with server output",
+			"type": "shell",
+			"command": "npm run build",
+			"isBackground": false,
+			"group": "build"
 		}
 	]
 }
