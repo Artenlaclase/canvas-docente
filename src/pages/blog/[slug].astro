@@ -1,7 +1,6 @@
 ---
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import Header from "../../components/Header.astro";
-import { Image } from 'astro:assets';
 import { getCollection } from 'astro:content';
 
 export const prerender = true;
@@ -21,16 +20,36 @@ const { Content } = await post.render();
     {
       post.data.cover && (() => {
         const assets = import.meta.glob('../../assets/images/**/*', { eager: true, import: 'default' });
-        const coverPath = post.data.cover as string;
-        const looksLocal = coverPath.startsWith('/src/') || coverPath.startsWith('../') || coverPath.startsWith('./') || coverPath.startsWith('/');
-        const normalized = coverPath.startsWith('/src/') ? coverPath.slice(1) : coverPath;
-        const key = `../${normalized.replace(/^src\//, '')}`;
-        const resolved = assets[key];
-        if (import.meta.env.DEV && looksLocal && !resolved) {
-          console.warn(`[Blog post] No se pudo resolver la portada local: ${coverPath}. Asegúrate de que exista en src/assets y usa una ruta relativa, por ejemplo ../../assets/...`);
+        const coverPath = post.data.cover;
+        function resolveCover(path) {
+          if (!path) return undefined;
+          if (path.startsWith('/src/')) {
+            // Glob keys are '../../assets/images/...'
+            const key = '../..' + path.replace('/src', '');
+            if (assets[key]) return assets[key];
+          }
+          const idx = path.indexOf('assets/images/');
+          if (idx !== -1) {
+            const tail = path.slice(idx);
+            const key = '../..' + '/' + tail.replace(/^assets\//, 'assets/');
+            if (assets[key]) return assets[key];
+          }
+          const file = path.split('/').pop();
+          if (file) {
+            const match = Object.keys(assets).find((k) => k.endsWith('/' + file));
+            if (match) return assets[match];
+          }
+          return undefined;
         }
-        return resolved
-          ? (<Image src={resolved as any} alt={post.data.title} class="rounded-lg" />)
+        const resolved = resolveCover(coverPath);
+        const resolvedUrl = typeof resolved === 'string'
+          ? resolved
+          : (resolved && typeof resolved === 'object' && 'src' in resolved ? resolved.src : undefined);
+        if (import.meta.env.DEV && (/^(\/|\.\/|\.\.\/)/.test(coverPath) || coverPath.startsWith('/src/')) && !resolved) {
+          console.warn(`[Blog post] No se pudo resolver la portada local: ${coverPath}. Asegúrate de que exista en src/assets/images y usa una ruta relativa, por ejemplo ../../assets/images/...`);
+        }
+        return resolvedUrl
+          ? (<img src={resolvedUrl} alt={post.data.title} class="rounded-lg" loading="lazy" />)
           : (<img src={coverPath} alt={post.data.title} class="rounded-lg" loading="lazy" />);
       })()
     }

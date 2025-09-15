@@ -1,21 +1,41 @@
 ---
-import { Image } from 'astro:assets';
 const { post } = Astro.props as { post: any };
-// Try to resolve local asset covers under src/assets via glob (so preview/dev finds them)
-const assets = import.meta.glob('../assets/images/**/*', { eager: true, import: 'default' });
+// Intentar resolver assets locales bajo src/assets/images
+const assets = import.meta.glob('../assets/images/**/*', { eager: true, import: 'default' }) as Record<string, any>;
 const coverPath = post.data.cover as string | undefined;
-const isLocal = coverPath?.startsWith('/') || coverPath?.startsWith('./') || coverPath?.startsWith('../');
-// Normalize possible absolute '/src/...' to project-relative
-const normalized = coverPath?.startsWith('/src/') ? coverPath.slice(1) : coverPath;
-const resolvedKey = normalized && `../${normalized.replace(/^src\//, '')}`;
-const resolved = resolvedKey && assets[resolvedKey];
+const isLocal = !!coverPath && (/^(\/|\.\/|\.\.\/)/.test(coverPath) || coverPath.startsWith('/src/'));
+
+function resolveCover(path?: string): string | undefined {
+  if (!path) return undefined;
+  // 1) Si viene como /src/..., convertir a relativo esperado por el glob
+  if (path.startsWith('/src/')) {
+    const key = '..' + path.replace('/src', ''); // '/src/assets/...' => '../assets/...'
+    if (assets[key]) return typeof assets[key] === 'string' ? assets[key] : assets[key]?.src;
+  }
+  // 2) Si parece relativo desde otro directorio (../../assets/images/...), quedarnos con la parte desde assets/images/
+  const idx = path.indexOf('assets/images/');
+  if (idx !== -1) {
+    const tail = path.slice(idx); // 'assets/images/...'
+    const key = '..' + '/' + tail.replace(/^assets\//, 'assets/'); // '../assets/images/...'
+    if (assets[key]) return typeof assets[key] === 'string' ? assets[key] : assets[key]?.src;
+  }
+  // 3) Buscar por nombre de archivo como último recurso
+  const file = path.split('/').pop();
+  if (file) {
+    const match = Object.keys(assets).find((k) => k.endsWith('/' + file));
+    if (match) return typeof assets[match] === 'string' ? assets[match] : assets[match]?.src;
+  }
+  return undefined;
+}
+
+const resolved = resolveCover(coverPath);
 if (import.meta.env.DEV && coverPath && isLocal && !resolved) {
-  console.warn(`[BlogCard] No se pudo resolver la portada local: ${coverPath}. Asegúrate de que exista en src/assets y usa una ruta relativa, por ejemplo ../../assets/...`);
+  console.warn(`[BlogCard] No se pudo resolver la portada local: ${coverPath}. Asegúrate de que exista en src/assets/images y usa una ruta relativa, por ejemplo ../../assets/images/...`);
 }
 ---
 <a href={`/blog/${post.slug}`} class="group block rounded-lg overflow-hidden border border-slate-200 hover:shadow-md transition">
   {coverPath && resolved ? (
-    <Image src={resolved as any} alt={post.data.title} class="aspect-[16/9] w-full object-cover group-hover:scale-[1.02] transition" />
+    <img src={resolved} alt={post.data.title} loading="lazy" class="aspect-[16/9] w-full object-cover group-hover:scale-[1.02] transition" />
   ) : coverPath ? (
     <img src={coverPath} alt={post.data.title} loading="lazy" class="aspect-[16/9] w-full object-cover group-hover:scale-[1.02] transition" />
   ) : null}
