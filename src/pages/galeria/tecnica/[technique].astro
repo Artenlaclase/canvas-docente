@@ -22,7 +22,9 @@ export async function getStaticPaths() {
   return techniques.map((t) => ({ params: { technique: t }, props: { technique: t } }));
 }
 
-const { technique } = Astro.props as { technique: string };
+// En modo server (output: 'server'), getStaticPaths se ignora para páginas dinámicas.
+// Por eso, usar siempre Astro.params y decodificar el valor recibido en la URL.
+const technique = decodeURIComponent(Astro.params.technique ?? '');
 const all = await getCollection('galeria');
 const items = all.filter((p) => p.data.technique === technique);
 
