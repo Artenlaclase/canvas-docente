@@ -14,7 +14,7 @@ src/
   components/
     Header.astro
     Gallery.astro
-    TechniqueFilter.astro
+    
     BlogCard.astro
   layouts/
     BaseLayout.astro

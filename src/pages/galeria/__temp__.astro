@@ -1,0 +1,11 @@
+---
+import { getCollection } from 'astro:content';
+export const prerender = true;
+export async function getStaticPaths() {
+  const all = await getCollection('galeria');
+  const years = [...new Set(all.map((p) => String(p.data.year)))];
+  return years.map((y) => ({ params: { year: y } }));
+}
+const { year } = Astro.params;
+return Astro.redirect(`/galeria/anio/${encodeURIComponent(String(year ?? ''))}`, 301);
+---

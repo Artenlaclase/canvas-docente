@@ -1,16 +1,12 @@
 ---
-import BaseLayout from "../../layouts/BaseLayout.astro";
-import Header from "../../components/Header.astro";
-import Gallery from "../../components/Gallery.astro";
 import { getCollection } from 'astro:content';
-
+export const prerender = true;
+export async function getStaticPaths() {
+  const all = await getCollection('galeria');
+  const techniques = [...new Set(all.map((p) => String(p.data.technique)))];
+  return techniques.map((t) => ({ params: { technique: t } }));
+}
 const { technique } = Astro.params;
-const decoded = decodeURIComponent(technique ?? '');
-const all = await getCollection('galeria');
-const items = all.filter((p) => p.data.technique === decoded);
+return Astro.redirect(`/galeria/tecnica/${encodeURIComponent(String(technique ?? ''))}`, 301);
 ---
-<BaseLayout title={`${decoded} | Galería`}>
-  <Fragment slot="header"><Header /></Fragment>
-  <h1 class="text-2xl font-semibold mb-6">{decoded}</h1>
-  <Gallery items={items} />
-</BaseLayout>
+---
