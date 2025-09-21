@@ -157,3 +157,26 @@ El proyecto intenta resolver automáticamente imágenes locales bajo `src/assets
 ### Notas
 - Los estilos de Tailwind están en `src/styles/global.css` y se importan en `BaseLayout.astro`.
 - Si ves advertencias en el editor sobre `@tailwind` o `@apply`, son del analizador estático del editor. En la compilación real de Astro se procesan con PostCSS/Tailwind.
+
+### Blog con WordPress (opcional)
+
+Puedes usar tu sitio WordPress como backend para el blog usando la API REST.
+
+Configuración:
+
+1. Define una variable de entorno con la URL base de tu WP:
+   - `WP_API_BASE` (recomendado) o `PUBLIC_WP_API_BASE`
+   - Acepta:
+     - `https://tu-sitio.com` (se completará a `/wp-json/wp/v2`)
+     - o directamente `https://tu-sitio.com/wp-json/wp/v2`
+2. Publica entradas con estado "publicado". Se usará la imagen destacada si está disponible.
+
+Comportamiento:
+
+- Si la variable está definida, las rutas `/blog` y `/blog/[slug]` buscarán primero en WordPress. Si hay un fallo o no hay entradas, se hace fallback a la colección local (`src/content/blog`).
+- El contenido de WP se renderiza como HTML (`content.rendered` de la API). Asegúrate de confiar en tu origen WP o filtrar en WP.
+
+Limitaciones iniciales:
+
+- Paginación: actualmente solo se piden hasta 50-100 posts (configurable en código). Si necesitas paginación, podemos ampliarlo.
+- Taxonomías/categorías: no se exponen aún en la UI.

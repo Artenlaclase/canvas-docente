@@ -2,14 +2,37 @@
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import Header from "../../components/Header.astro";
 import BlogCard from "../../components/BlogCard.astro";
+import BlogPagination from "../../components/BlogPagination.astro";
 import { getCollection } from 'astro:content';
+import { getWpBase, listWpPostsPage } from "../../utils/wp";
 
-const posts = (await getCollection('blog')).sort((a,b) => +new Date(b.data.date) - +new Date(a.data.date));
----
+// Pagination config
+const PER_PAGE = 9;
+
+// Try WordPress first if configured via env; otherwise use local content collection
+let posts: any[] = [];
+let totalPages = 1;
+const current = 1;
+const wpBase = getWpBase();
+if (wpBase) {
+  try {
+    const { posts: wpPosts, totalPages: tp } = await listWpPostsPage(1, PER_PAGE);
+    posts = wpPosts;
+    totalPages = tp || 1;
+  } catch (err) {
+    console.warn('[Blog] WP fetch failed, falling back to local collection:', err);
+  }
+}
+if (!posts.length) {
+  const locals = (await getCollection('blog')).sort((a,b) => +new Date(b.data.date) - +new Date(a.data.date));
+  totalPages = Math.max(1, Math.ceil(locals.length / PER_PAGE));
+  posts = locals.slice(0, PER_PAGE);
+}
 <BaseLayout title="Blog | Canvas Docente">
   <Fragment slot="header"><Header /></Fragment>
   <h1 class="text-2xl font-semibold mb-6">Blog</h1>
   <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
     {posts.map((post) => <BlogCard post={post} />)}
   </div>
+  <BlogPagination current={current} totalPages={totalPages} base="/blog" />
 </BaseLayout>

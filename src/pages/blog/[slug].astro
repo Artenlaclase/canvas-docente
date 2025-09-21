@@ -2,16 +2,33 @@
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import Header from "../../components/Header.astro";
 import { getCollection } from 'astro:content';
+import { getWpBase, listWpPosts, getWpPostBySlug, type NormalizedPost } from "../../utils/wp";
 
 export const prerender = true;
 export async function getStaticPaths() {
+  const wpBase = getWpBase();
+  if (wpBase) {
+    try {
+      const posts = await listWpPosts(100);
+      if (posts.length > 0) {
+        return posts.map((p) => ({ params: { slug: p.slug }, props: { wpPost: p } }));
+      }
+    } catch (e) {
+      console.warn('[Blog paths] WP fetch failed, using local collection:', e);
+    }
+  }
   const posts = await getCollection('blog');
-  return posts.map((post) => ({ params: { slug: post.slug }, props: { post } }));
+  return posts.map((post) => ({ params: { slug: post.slug }, props: { localPost: post } }));
 }
 
-const { post } = Astro.props as { post: any };
-if (!post) throw new Error('Post no encontrado');
-const { Content } = await post.render();
+const { wpPost, localPost } = Astro.props as { wpPost?: NormalizedPost; localPost?: any };
+if (!wpPost && !localPost) throw new Error('Post no encontrado');
+const isWP = !!wpPost;
+let Content: any = null;
+if (!isWP && localPost) {
+  const rendered = await localPost.render();
+  Content = rendered.Content;
+}
 // Resolver portada: assets locales bajo src/assets/images y retorno de URL string
 const assets = import.meta.glob('../../assets/images/**/*', { eager: true, import: 'default' }) as Record<string, any>;
 /**
@@ -46,22 +63,32 @@ function resolveCoverPath(path: string | undefined): string | undefined {
   return undefined;
 }
 ---
-<BaseLayout title={`${post.data.title} | Blog`}>
+<BaseLayout title={`${(isWP ? wpPost!.data.title : localPost.data.title)} | Blog`}>
   <Fragment slot="header"><Header /></Fragment>
   <article class="prose max-w-none">
-    <h1>{post.data.title}</h1>
-    {(() => {
-      const coverPath = post.data.cover as string | undefined;
-      const resolvedUrl = resolveCoverPath(coverPath);
-      if (import.meta.env.DEV && coverPath && (/^(\/.|\.\/|\.\.\/)/.test(coverPath) || coverPath.startsWith('/src/')) && !resolvedUrl) {
-        console.warn(`[Blog post] No se pudo resolver la portada local: ${coverPath}. Asegúrate de que exista en src/assets/images y usa una ruta relativa, por ejemplo ../../assets/images/...`);
-      }
-      const finalSrc = (resolvedUrl || coverPath || '') + '';
-      return coverPath ? (
-        <img src={finalSrc} alt={post.data.title} class="rounded-lg" loading="lazy" />
-      ) : null;
-    })()}
-    <p class="text-sm text-slate-500">{new Date(post.data.date).toLocaleDateString('es')}</p>
-    <Content />
+    <h1>{isWP ? wpPost!.data.title : localPost.data.title}</h1>
+    {isWP ? (
+      wpPost!.data.cover ? (
+        <img src={wpPost!.data.cover} alt={wpPost!.data.title} class="rounded-lg" loading="lazy" />
+      ) : null
+    ) : (
+      (() => {
+        const coverPath = localPost.data.cover as string | undefined;
+        const resolvedUrl = resolveCoverPath(coverPath);
+        if (import.meta.env.DEV && coverPath && (/^(\/.|\.\/|\.\.\/)/.test(coverPath) || coverPath.startsWith('/src/')) && !resolvedUrl) {
+          console.warn(`[Blog post] No se pudo resolver la portada local: ${coverPath}. Asegúrate de que exista en src/assets/images y usa una ruta relativa, por ejemplo ../../assets/images/...`);
+        }
+        const finalSrc = (resolvedUrl || coverPath || '') + '';
+        return coverPath ? (
+          <img src={finalSrc} alt={localPost.data.title} class="rounded-lg" loading="lazy" />
+        ) : null;
+      })()
+    )}
+    <p class="text-sm text-slate-500">{new Date((isWP ? wpPost!.data.date : localPost.data.date)).toLocaleDateString('es')}</p>
+    {isWP ? (
+      <div set:html={wpPost!.contentHtml} />
+    ) : (
+      <Content />
+    )}
   </article>
 </BaseLayout>
