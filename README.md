@@ -169,6 +169,7 @@ Configuración:
    - Acepta:
      - `https://tu-sitio.com` (se completará a `/wp-json/wp/v2`)
      - o directamente `https://tu-sitio.com/wp-json/wp/v2`
+  - o instalaciones en subcarpeta usando `rest_route` (por ej. `https://tu-sitio.com/blog/?rest_route=/wp/v2`)
 2. Publica entradas con estado "publicado". Se usará la imagen destacada si está disponible.
 
 Comportamiento:
@@ -178,5 +179,12 @@ Comportamiento:
 
 Limitaciones iniciales:
 
-- Paginación: actualmente solo se piden hasta 50-100 posts (configurable en código). Si necesitas paginación, podemos ampliarlo.
+- Paginación: `/blog` muestra 9 posts por página y usa `/blog/page/[n]` para las siguientes páginas. Con WP se usa el conteo de `X-WP-TotalPages`.
 - Taxonomías/categorías: no se exponen aún en la UI.
+
+Ejemplo `.env`:
+
+```
+# Sitio WP en subcarpeta
+WP_API_BASE=https://artenlaclase.cl/blog/?rest_route=/wp/v2
+```

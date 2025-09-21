@@ -29,9 +29,12 @@ function ensureApiBase(raw?: string): string | undefined {
   if (!raw) return undefined;
   // Accept either https://site.com or https://site.com/wp-json/wp/v2
   let base = raw.trim().replace(/\/$/, '');
-  if (!/\/wp-json\/.+/.test(base)) {
-    base = base + '/wp-json/wp/v2';
-  }
+  // If it already contains rest_route=/wp/v2 consider it valid
+  if (/rest_route=\/wp\/v2/.test(base)) return base;
+  // If it already looks like /wp-json/wp/v2 consider it valid
+  if (/\/wp-json\/.+/.test(base)) return base;
+  // Otherwise append standard wp-json path
+  base = base + '/wp-json/wp/v2';
   return base;
 }
 
@@ -95,7 +98,9 @@ export function normalizePost(raw: WpRawPost): NormalizedPost {
 export async function listWpPosts(limit = 100): Promise<NormalizedPost[]> {
   const base = getWpBase();
   if (!base) return [];
-  const url = `${base}/posts?status=publish&_embed=1&per_page=${Math.min(limit, 100)}`;
+  const url = base.includes('rest_route=')
+    ? `${base}/posts&status=publish&_embed=1&per_page=${Math.min(limit, 100)}`
+    : `${base}/posts?status=publish&_embed=1&per_page=${Math.min(limit, 100)}`;
   const items = await fetchJson<WpRawPost[]>(url);
   return items.map(normalizePost);
 }
@@ -103,7 +108,9 @@ export async function listWpPosts(limit = 100): Promise<NormalizedPost[]> {
 export async function listWpPostsPage(page = 1, perPage = 9): Promise<{ posts: NormalizedPost[]; total: number; totalPages: number }>{
   const base = getWpBase();
   if (!base) return { posts: [], total: 0, totalPages: 0 };
-  const url = `${base}/posts?status=publish&_embed=1&per_page=${Math.min(perPage, 100)}&page=${Math.max(1, page)}`;
+  const url = base.includes('rest_route=')
+    ? `${base}/posts&status=publish&_embed=1&per_page=${Math.min(perPage, 100)}&page=${Math.max(1, page)}`
+    : `${base}/posts?status=publish&_embed=1&per_page=${Math.min(perPage, 100)}&page=${Math.max(1, page)}`;
   const { data, headers } = await fetchJsonWithHeaders<WpRawPost[]>(url);
   const total = Number(headers.get('X-WP-Total') || headers.get('x-wp-total') || data.length || 0);
   const totalPages = Number(headers.get('X-WP-TotalPages') || headers.get('x-wp-totalpages') || (total ? Math.ceil(total / perPage) : 0));
@@ -113,7 +120,9 @@ export async function listWpPostsPage(page = 1, perPage = 9): Promise<{ posts: N
 export async function getWpPostBySlug(slug: string): Promise<NormalizedPost | undefined> {
   const base = getWpBase();
   if (!base) return undefined;
-  const url = `${base}/posts?slug=${encodeURIComponent(slug)}&_embed=1`;
+  const url = base.includes('rest_route=')
+    ? `${base}/posts&slug=${encodeURIComponent(slug)}&_embed=1`
+    : `${base}/posts?slug=${encodeURIComponent(slug)}&_embed=1`;
   const items = await fetchJson<WpRawPost[]>(url);
   const first = items?.[0];
   return first ? normalizePost(first) : undefined;
