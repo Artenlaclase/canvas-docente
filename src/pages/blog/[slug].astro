@@ -2,27 +2,29 @@
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import Header from "../../components/Header.astro";
 import { getCollection } from 'astro:content';
-import { getWpBase, listWpPosts, getWpPostBySlug, type NormalizedPost } from "../../utils/wp";
+import { getWpBase, getWpPostBySlug, type NormalizedPost } from "../../utils/wp";
 
-export const prerender = true;
-export async function getStaticPaths() {
-  const wpBase = getWpBase();
-  if (wpBase) {
-    try {
-      const posts = await listWpPosts(100);
-      if (posts.length > 0) {
-        return posts.map((p) => ({ params: { slug: p.slug }, props: { wpPost: p } }));
-      }
-    } catch (e) {
-      console.warn('[Blog paths] WP fetch failed, using local collection:', e);
-    }
+export const prerender = false;
+
+// SSR: resolver el post por slug en cada request para reflejar cambios inmediatos en WordPress
+const { slug } = Astro.params;
+let wpPost: NormalizedPost | undefined;
+let localPost: any | undefined;
+const wpBase = getWpBase();
+if (wpBase && slug) {
+  try {
+    wpPost = await getWpPostBySlug(slug);
+  } catch (e) {
+    console.warn('[Blog SSR] Error al obtener post WP por slug:', e);
   }
-  const posts = await getCollection('blog');
-  return posts.map((post) => ({ params: { slug: post.slug }, props: { localPost: post } }));
 }
-
-const { wpPost, localPost } = Astro.props as { wpPost?: NormalizedPost; localPost?: any };
-if (!wpPost && !localPost) throw new Error('Post no encontrado');
+if (!wpPost && slug) {
+  const all = await getCollection('blog');
+  localPost = all.find((p) => p.slug === slug);
+}
+if (!wpPost && !localPost) {
+  return new Response('Post no encontrado', { status: 404 });
+}
 const isWP = !!wpPost;
 let Content: any = null;
 if (!isWP && localPost) {
@@ -65,11 +67,16 @@ function resolveCoverPath(path: string | undefined): string | undefined {
 ---
 <BaseLayout title={`${(isWP ? wpPost!.data.title : localPost.data.title)} | Blog`}>
   <Fragment slot="header"><Header /></Fragment>
-  <article class="prose max-w-none">
+  <article class="prose mx-auto max-w-4xl">
     <h1>{isWP ? wpPost!.data.title : localPost.data.title}</h1>
     {isWP ? (
       wpPost!.data.cover ? (
-        <img src={wpPost!.data.cover} alt={wpPost!.data.title} class="rounded-lg" loading="lazy" />
+        <img
+          src={wpPost!.data.cover}
+          alt={wpPost!.data.title}
+          loading="lazy"
+          class="w-full aspect-[16/9] object-cover rounded-lg"
+        />
       ) : null
     ) : (
       (() => {
@@ -80,7 +87,12 @@ function resolveCoverPath(path: string | undefined): string | undefined {
         }
         const finalSrc = (resolvedUrl || coverPath || '') + '';
         return coverPath ? (
-          <img src={finalSrc} alt={localPost.data.title} class="rounded-lg" loading="lazy" />
+          <img
+            src={finalSrc}
+            alt={localPost.data.title}
+            loading="lazy"
+            class="w-full aspect-[16/9] object-cover rounded-lg"
+          />
         ) : null;
       })()
     )}
