@@ -96,7 +96,9 @@ function resolveCoverPath(path: string | undefined): string | undefined {
         ) : null;
       })()
     )}
-    <p class="text-sm text-slate-500">{new Date((isWP ? wpPost!.data.date : localPost.data.date)).toLocaleDateString('es')}</p>
+    <p class="text-sm text-slate-500">
+      {isWP ? (wpPost!.data.author ? `Por ${wpPost!.data.author}` : new Date(wpPost!.data.date).toLocaleDateString('es')) : new Date(localPost.data.date).toLocaleDateString('es')}
+    </p>
     {isWP ? (
       <div set:html={wpPost!.contentHtml} />
     ) : (

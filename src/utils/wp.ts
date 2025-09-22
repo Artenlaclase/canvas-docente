@@ -21,6 +21,7 @@ export type NormalizedPost = {
     excerpt: string;
     date: string;
     cover?: string;
+    author?: string;
   };
   contentHtml?: string;
 };
@@ -78,6 +79,13 @@ function getFeaturedImage(raw: WpRawPost): string | undefined {
   return typeof url === 'string' ? url : undefined;
 }
 
+function getAuthorName(raw: WpRawPost): string | undefined {
+  const emb = raw._embedded;
+  const authorArr = emb?.author as Array<any> | undefined;
+  const name = authorArr?.[0]?.name;
+  return typeof name === 'string' ? name : undefined;
+}
+
 export function normalizePost(raw: WpRawPost): NormalizedPost {
   const title = raw.title?.rendered ?? '';
   const excerpt = raw.excerpt?.rendered ?? '';
@@ -90,6 +98,7 @@ export function normalizePost(raw: WpRawPost): NormalizedPost {
       excerpt: stripHtml(excerpt),
       date: raw.date,
       cover: getFeaturedImage(raw),
+      author: getAuthorName(raw),
     },
     contentHtml: content,
   };

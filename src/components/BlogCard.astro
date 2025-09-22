@@ -42,6 +42,8 @@ if (import.meta.env.DEV && coverPath && isLocal && !resolved) {
   <div class="p-4">
     <h3 class="font-semibold">{post.data.title}</h3>
     <p class="text-sm text-slate-600 mt-1 line-clamp-2">{post.data.excerpt}</p>
-    <p class="text-xs text-slate-500 mt-2">{new Date(post.data.date).toLocaleDateString('es')}</p>
+    <p class="text-xs text-slate-500 mt-2">
+      {post.data.author ? `Por ${post.data.author}` : new Date(post.data.date).toLocaleDateString('es')}
+    </p>
   </div>
 </a>
