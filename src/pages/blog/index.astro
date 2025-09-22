@@ -28,6 +28,7 @@ if (!posts.length) {
   totalPages = Math.max(1, Math.ceil(locals.length / PER_PAGE));
   posts = locals.slice(0, PER_PAGE);
 }
+---
 <BaseLayout title="Blog | Canvas Docente">
   <Fragment slot="header"><Header /></Fragment>
   <h1 class="text-2xl font-semibold mb-6">Blog</h1>
