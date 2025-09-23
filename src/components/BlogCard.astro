@@ -28,16 +28,27 @@ function resolveCover(path?: string): string | undefined {
   return undefined;
 }
 
+function firstImageFromHtml(html?: string): string | undefined {
+  if (!html || typeof html !== 'string') return undefined;
+  const m = html.match(/<img[^>]+src=["']([^"']+)["']/i);
+  return m?.[1];
+}
+
 const resolved = resolveCover(coverPath);
 if (import.meta.env.DEV && coverPath && isLocal && !resolved) {
   console.warn(`[BlogCard] No se pudo resolver la portada local: ${coverPath}. Asegúrate de que exista en src/assets/images y usa una ruta relativa, por ejemplo ../../assets/images/...`);
 }
+
+// WP posts (normalized) have numeric id; local content does not
+const isWpPost = typeof post.id === 'number';
+// For WP posts: ONLY use featured image (cover). If missing, don't fallback to HTML to avoid randomness.
+// For local posts: use resolved asset or cover, and as last resort the first image in content.
+const fallbackHtmlImg = !coverPath && !isWpPost ? firstImageFromHtml(post.contentHtml) : undefined;
+const displayCover = isWpPost ? (coverPath || undefined) : (resolved || coverPath || fallbackHtmlImg);
 ---
 <a href={`/blog/${post.slug}`} class="group block rounded-lg overflow-hidden border border-slate-200 hover:shadow-md transition">
-  {coverPath && resolved ? (
-    <img src={resolved} alt={post.data.title} loading="lazy" class="aspect-[16/9] w-full object-cover group-hover:scale-[1.02] transition" />
-  ) : coverPath ? (
-    <img src={coverPath} alt={post.data.title} loading="lazy" class="aspect-[16/9] w-full object-cover group-hover:scale-[1.02] transition" />
+  {displayCover ? (
+    <img src={displayCover} alt={post.data.title} loading="lazy" class="aspect-[16/9] w-full object-cover group-hover:scale-[1.02] transition" />
   ) : null}
   <div class="p-4">
     <h3 class="font-semibold">{post.data.title}</h3>
