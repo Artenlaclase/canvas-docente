@@ -6,3 +6,75 @@
 .prose {
   @apply prose-slate;
 }
+
+/* WordPress content tweaks */
+/* Responsive gallery grid for classic WP galleries (blocks and shortcodes) */
+.prose .wp-block-gallery,
+.prose .blocks-gallery-grid,
+.prose .gallery {
+  display: grid;
+  gap: 0.75rem;
+}
+
+/* Auto-fit columns with a reasonable min size */
+.prose .wp-block-gallery,
+.prose .blocks-gallery-grid {
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  list-style: none;
+  padding-left: 0;
+  margin: 0;
+}
+
+/* Legacy .gallery may use inline width hints; prefer 3-4 cols on larger screens */
+@media (min-width: 640px) {
+  .prose .gallery {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (min-width: 768px) {
+  .prose .gallery {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@media (min-width: 1024px) {
+  .prose .gallery {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+/* Gallery items normalize */
+.prose .wp-block-gallery figure,
+.prose .blocks-gallery-item,
+.prose .gallery-item,
+.prose .gallery .gallery-item {
+  margin: 0;
+}
+
+.prose .wp-block-gallery img,
+.prose .blocks-gallery-item img,
+.prose .gallery-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  border-radius: 0.5rem; /* match rounded-lg */
+}
+
+/* Optional: captions */
+.prose .wp-element-caption,
+.prose .gallery-caption {
+  @apply text-sm text-slate-600 mt-1;
+}
+
+/* Ensure block images inside content don't overflow and have consistent rounding */
+.prose :where(img) {
+  border-radius: 0.5rem;
+}
+
+/* Respect Gutenberg columns-X classes */
+.prose .wp-block-gallery.columns-1 { grid-template-columns: repeat(1, minmax(0, 1fr)); }
+.prose .wp-block-gallery.columns-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.prose .wp-block-gallery.columns-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.prose .wp-block-gallery.columns-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.prose .wp-block-gallery.columns-5 { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+.prose .wp-block-gallery.columns-6 { grid-template-columns: repeat(6, minmax(0, 1fr)); }
