@@ -117,6 +117,54 @@
   cursor: zoom-in;
 }
 
+/* ========================= */
+/* Video embeds (WordPress)  */
+/* ========================= */
+/* Make videos fill the paragraph width and be responsive */
+.prose figure.wp-block-embed.is-type-video,
+.prose .wp-block-video {
+  margin-top: 1.25rem;
+  margin-bottom: 1.25rem;
+}
+
+.prose figure.wp-block-embed .wp-block-embed__wrapper,
+.prose .wp-block-video {
+  position: relative;
+}
+
+.prose figure.wp-block-embed .wp-block-embed__wrapper::before,
+.prose .wp-block-video::before {
+  content: "";
+  display: block;
+  padding-top: 56.25%; /* 16:9 */
+}
+
+.prose figure.wp-block-embed .wp-block-embed__wrapper > iframe,
+.prose .wp-block-video > video {
+  position: absolute;
+  inset: 0;
+}
+
+.prose figure.wp-block-embed.is-type-video .wp-block-embed__wrapper > iframe,
+.prose .wp-content iframe[src*="youtube"],
+.prose .wp-content iframe[src*="vimeo"],
+.prose .wp-content iframe[src*="player.vimeo"],
+.prose .wp-content iframe[src*="dailymotion"],
+.prose .wp-content video {
+  width: 100% !important;
+  max-width: none !important;
+  aspect-ratio: 16 / 9;
+  height: auto !important;
+  display: block;
+  border-radius: 0.5rem;
+}
+
+/* Caption box below video (uses Gutenberg figcaption) */
+.prose figure.wp-block-embed figcaption,
+.prose .wp-block-video figcaption {
+  @apply text-sm text-slate-700 bg-slate-100 border border-slate-200 rounded-md p-3 mt-2;
+}
+
 /* Respect Gutenberg columns-X classes */
 .prose .wp-block-gallery.columns-1 { grid-template-columns: repeat(1, minmax(0, 1fr)); }
 .prose .wp-block-gallery.columns-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
