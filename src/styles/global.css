@@ -19,7 +19,8 @@
 /* Auto-fit columns with a reasonable min size */
 .prose .wp-block-gallery,
 .prose .blocks-gallery-grid {
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  /* Make thumbs larger and uniform */
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   list-style: none;
   padding-left: 0;
   margin: 0;
@@ -60,6 +61,29 @@
   border-radius: 0.5rem; /* match rounded-lg */
 }
 
+/* Enforce a consistent aspect ratio for gallery items */
+.prose .wp-block-gallery .blocks-gallery-item,
+.prose .blocks-gallery-grid .blocks-gallery-item,
+.prose .gallery .gallery-item {
+  aspect-ratio: 4 / 3;
+}
+
+/* Ensure wrappers fill the item height */
+.prose .blocks-gallery-item > figure,
+.prose .gallery .gallery-item > figure,
+.prose .gallery .gallery-item > a,
+.prose .gallery .gallery-item > * {
+  height: 100%;
+}
+
+/* Anchors should be block-level to fill the tile */
+.prose .wp-block-gallery a,
+.prose .blocks-gallery-item a,
+.prose .gallery .gallery-item a {
+  display: block;
+  height: 100%;
+}
+
 /* Optional: captions */
 .prose .wp-element-caption,
 .prose .gallery-caption {
@@ -78,3 +102,8 @@
 .prose .wp-block-gallery.columns-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .prose .wp-block-gallery.columns-5 { grid-template-columns: repeat(5, minmax(0, 1fr)); }
 .prose .wp-block-gallery.columns-6 { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+
+/* Prefer large, uniform tiles for legacy .gallery as well */
+.prose .gallery {
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
