@@ -11,6 +11,7 @@ export const prerender = true;
 const PER_PAGE = 9;
 
 export async function getStaticPaths() {
+  const PER_PAGE = 9;
   const paths: any[] = [];
   const wpBase = getWpBase();
   if (wpBase) {
