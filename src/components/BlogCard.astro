@@ -48,7 +48,7 @@ const displayCover = isWpPost ? (coverPath || undefined) : (resolved || coverPat
 ---
 <a href={`/blog/${post.slug}`} class="group block rounded-lg overflow-hidden border border-slate-200 hover:shadow-md transition">
   {displayCover ? (
-    <img src={displayCover} alt={post.data.title} loading="lazy" class="aspect-[16/9] w-full object-cover group-hover:scale-[1.02] transition" />
+    <img src={displayCover} alt={post.data.title || 'Imagen del artículo'} loading="lazy" class="aspect-[16/9] w-full object-cover group-hover:scale-[1.02] transition" />
   ) : null}
   <div class="p-4">
     <h3 class="font-semibold">{post.data.title}</h3>

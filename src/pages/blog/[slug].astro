@@ -72,6 +72,7 @@ function resolveCoverPath(path: string | undefined): string | undefined {
     {isWP ? (
       wpPost!.data.cover ? (
         <img
+          id="post-cover"
           src={wpPost!.data.cover}
           alt={wpPost!.data.title}
           loading="lazy"
@@ -88,6 +89,7 @@ function resolveCoverPath(path: string | undefined): string | undefined {
         const finalSrc = (resolvedUrl || coverPath || '') + '';
         return coverPath ? (
           <img
+            id="post-cover"
             src={finalSrc}
             alt={localPost.data.title}
             loading="lazy"
@@ -126,6 +128,82 @@ function resolveCoverPath(path: string | undefined): string | undefined {
   <script>
   // @ts-nocheck
     (function(){
+      // Debug: log cover image status and content images load/errors to diagnose missing images
+      function debugImages(){
+        try {
+          const cover = document.getElementById('post-cover');
+          if (cover && cover.tagName === 'IMG') {
+            const img = /** @type {HTMLImageElement} */ (cover);
+            console.info('[Blog Debug] Cover element found', {
+              src: img.getAttribute('src'),
+              currentSrc: img.currentSrc,
+              srcset: img.getAttribute('srcset'),
+              naturalWidth: img.naturalWidth,
+              naturalHeight: img.naturalHeight,
+            });
+            img.addEventListener('load', () => {
+              console.info('[Blog Debug] Cover loaded', {
+                currentSrc: img.currentSrc,
+                naturalWidth: img.naturalWidth,
+                naturalHeight: img.naturalHeight,
+              });
+            });
+            img.addEventListener('error', (e) => {
+              console.error('[Blog Debug] Cover failed to load', {
+                src: img.getAttribute('src'),
+                currentSrc: img.currentSrc,
+                error: e,
+              });
+            });
+          } else {
+            console.info('[Blog Debug] No cover image element present');
+          }
+
+          const container = document.querySelector('article .wp-content');
+          if (container) {
+            const imgs = Array.from(container.querySelectorAll('img'));
+            console.info(`[Blog Debug] Encontradas ${imgs.length} imágenes dentro del contenido`);
+            imgs.forEach((im, idx) => {
+              const i = /** @type {HTMLImageElement} */ (im);
+              console.debug('[Blog Debug] Content img initial', idx + 1, {
+                src: i.getAttribute('src'),
+                currentSrc: i.currentSrc,
+                srcset: i.getAttribute('srcset'),
+                sizes: i.getAttribute('sizes'),
+              });
+              i.addEventListener('load', () => {
+                console.debug('[Blog Debug] Content img loaded', idx + 1, {
+                  currentSrc: i.currentSrc,
+                  naturalWidth: i.naturalWidth,
+                  naturalHeight: i.naturalHeight,
+                });
+              });
+              i.addEventListener('error', (e) => {
+                console.error('[Blog Debug] Content img error', idx + 1, {
+                  src: i.getAttribute('src'),
+                  currentSrc: i.currentSrc,
+                  error: e,
+                });
+              });
+            });
+          }
+
+          // Global capture for image resource errors
+          window.addEventListener('error', (e) => {
+            const t = e && e.target;
+            if (t && t.tagName === 'IMG') {
+              const img = /** @type {HTMLImageElement} */ (t);
+              console.error('[Blog Debug] Global IMG error (captured)', {
+                src: img.getAttribute('src'),
+                currentSrc: img.currentSrc,
+              });
+            }
+          }, true);
+        } catch (err) {
+          console.warn('[Blog Debug] Error setting up image debug logs', err);
+        }
+      }
+
       function initPostLightbox(){
         const container = document.querySelector('article .wp-content');
         if (!container) return;
@@ -205,8 +283,12 @@ function resolveCoverPath(path: string | undefined): string | undefined {
         document.addEventListener('mouseup', () => { isPanning = false; if (imgEl) imgEl.style.cursor = 'grab'; });
       }
 
-      if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initPostLightbox);
-      else initPostLightbox();
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => { debugImages(); initPostLightbox(); });
+      } else {
+        debugImages();
+        initPostLightbox();
+      }
       window.addEventListener('beforeunload', () => { document.body.style.overflow = ''; });
     })();
   </script>

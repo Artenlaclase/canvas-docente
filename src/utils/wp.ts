@@ -47,6 +47,73 @@ export function getWpBase(): string | undefined {
   return ensureApiBase(b);
 }
 
+export function getSiteRootFromBase(base?: string): string | undefined {
+  if (!base) return undefined;
+  // rest_route variant: https://site.com/subdir/?rest_route=/wp/v2 => site root is https://site.com/subdir
+  if (base.includes('rest_route=')) {
+    const idx = base.indexOf('?rest_route=');
+    return idx !== -1 ? base.slice(0, idx) : base;
+  }
+  // wp-json variant: https://site.com[/subdir]/wp-json/wp/v2 => site root is https://site.com[/subdir]
+  const m = base.match(/^(https?:\/\/[^\s]+?)\/wp-json\//i);
+  if (m) return m[1];
+  // Fallback: strip trailing /wp-json or /wp-json/wp/v2 if present
+  return base.replace(/\/wp-json(?:\/wp\/v2)?$/i, '');
+}
+
+function normalizeImageUrl(url?: string, siteRoot?: string): string | undefined {
+  if (!url) return undefined;
+  const trimmed = url.trim();
+  if (/^https?:\/\//i.test(trimmed)) {
+    // Optionally upgrade http->https if same host and siteRoot is https
+    try {
+      const u = new URL(trimmed);
+      if (siteRoot) {
+        const s = new URL(siteRoot);
+        if (u.protocol === 'http:' && s.protocol === 'https:' && u.host === s.host) {
+          u.protocol = 'https:';
+          return u.toString();
+        }
+      }
+    } catch {}
+    return trimmed;
+  }
+  if (/^\/\//.test(trimmed)) {
+    return 'https:' + trimmed;
+  }
+  if (trimmed.startsWith('/')) {
+    if (!siteRoot) return trimmed; // relative to current origin
+    return siteRoot.replace(/\/$/, '') + trimmed;
+  }
+  // Other relative paths
+  if (siteRoot) return siteRoot.replace(/\/$/, '') + '/' + trimmed.replace(/^\.\//, '');
+  return trimmed;
+}
+
+function rewriteContentHtml(html: string, siteRoot?: string): string {
+  if (!html) return html;
+  const norm = (u?: string) => normalizeImageUrl(u, siteRoot) || u || '';
+  let out = html;
+  // Promote data-lazy-src and data-src to src
+  out = out.replace(/(<img[^>]*?)\sdata-lazy-src=["']([^"']+)["']([^>]*>)/gi, (_m, pre, url, post) => `${pre} src="${norm(url)}"${post}`);
+  out = out.replace(/(<img[^>]*?)\sdata-src=["']([^"']+)["']([^>]*>)/gi, (_m, pre, url, post) => `${pre} src="${norm(url)}"${post}`);
+  // Normalize existing src
+  out = out.replace(/(<img[^>]*?\ssrc=["'])([^"']+)(["'])/gi, (_m, pre, url, suf) => `${pre}${norm(url)}${suf}`);
+  // Normalize srcset (comma-separated list)
+  out = out.replace(/(<img[^>]*?\ssrcset=["'])([^"']+)(["'])/gi, (_m, pre, list, suf) => {
+    const fixed = list.split(',').map((entry: string) => {
+      const e = entry.trim();
+      if (!e) return e;
+      const parts = e.split(/\s+/);
+      const url = parts.shift() || '';
+      const rest = parts.join(' ');
+      return `${norm(url)}${rest ? ' ' + rest : ''}`;
+    }).join(', ');
+    return `${pre}${fixed}${suf}`;
+  });
+  return out;
+}
+
 async function fetchJson<T>(url: string): Promise<T> {
   const res = await fetch(url, { headers: { Accept: 'application/json' } });
   if (!res.ok) throw new Error(`WP fetch failed ${res.status}: ${url}`);
@@ -71,12 +138,31 @@ function stripHtml(input: string): string {
     .trim();
 }
 
+function firstImageFromHtml(html?: string): string | undefined {
+  if (!html || typeof html !== 'string') return undefined;
+  // Prefer explicit src; also consider common lazy attributes
+  const m = html.match(/<(?:img)[^>]+(?:data-lazy-src|data-src|src)=["']([^"']+)["']/i);
+  return m?.[1];
+}
+
 function getFeaturedImage(raw: WpRawPost): string | undefined {
-  // Preferred: _embedded['wp:featuredmedia'][0].source_url
   const emb = raw._embedded;
   const mediaArr = emb?.['wp:featuredmedia'] as Array<any> | undefined;
-  const url = mediaArr?.[0]?.source_url || raw.jetpack_featured_media_url;
-  return typeof url === 'string' ? url : undefined;
+  const media = mediaArr?.[0];
+  // Collect candidates with width if available
+  type Candidate = { url: string; width?: number };
+  const candidates: Candidate[] = [];
+  if (typeof media?.source_url === 'string') candidates.push({ url: media.source_url, width: media?.media_details?.width });
+  if (typeof raw.jetpack_featured_media_url === 'string') candidates.push({ url: raw.jetpack_featured_media_url });
+  const sizes = media?.media_details?.sizes || {};
+  for (const key of Object.keys(sizes)) {
+    const s = sizes[key];
+    if (s && typeof s.source_url === 'string') candidates.push({ url: s.source_url, width: s.width });
+  }
+  if (candidates.length === 0) return undefined;
+  // Sort by width desc (undefined last) and pick first
+  candidates.sort((a, b) => (b.width ?? -1) - (a.width ?? -1));
+  return candidates[0].url;
 }
 
 function getAuthorName(raw: WpRawPost): string | undefined {
@@ -90,6 +176,13 @@ export function normalizePost(raw: WpRawPost): NormalizedPost {
   const title = raw.title?.rendered ?? '';
   const excerpt = raw.excerpt?.rendered ?? '';
   const content = raw.content?.rendered ?? '';
+  const siteRoot = getSiteRootFromBase(getWpBase());
+  let coverRaw = getFeaturedImage(raw);
+  if (!coverRaw) {
+    const firstImg = firstImageFromHtml(content);
+    if (firstImg) coverRaw = firstImg;
+  }
+  const contentHtml = rewriteContentHtml(content, siteRoot);
   return {
     id: raw.id,
     slug: raw.slug,
@@ -97,10 +190,10 @@ export function normalizePost(raw: WpRawPost): NormalizedPost {
       title: title.replace(/<[^>]+>/g, ''),
       excerpt: stripHtml(excerpt),
       date: raw.date,
-      cover: getFeaturedImage(raw),
+      cover: normalizeImageUrl(coverRaw, siteRoot),
       author: getAuthorName(raw),
     },
-    contentHtml: content,
+    contentHtml,
   };
 }
 
