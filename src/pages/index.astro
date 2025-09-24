@@ -89,19 +89,21 @@ if (columns.length < 3) {
 		</div>
 	</section>
 
-	<section class="pt-4">
-		<h2 class="text-xl font-semibold mb-3">Explora por técnica</h2>
-		<div class="flex flex-wrap gap-2">
+	<section class="pt-2 -mt-2">
+		<h2 class="text-xl font-semibold mb-3 text-center">Explora por técnica</h2>
+		<div class="max-w-4xl mx-auto rounded-xl border border-slate-200 p-3 sm:p-4">
+			<div class="flex flex-wrap justify-center gap-2">
 					{['Pintura','Collage','Audiovisual','Mosaico','Volumen','Máscaras','Lámparas','Diseño','Dibujo'].map((t) => (
 						<a href={`/galeria/tecnica/${encodeURIComponent(t)}`} class="rounded-full border border-slate-300 px-4 py-1.5 text-sm hover:bg-slate-50">{t}</a>
-			))}
+				))}
+			</div>
 		</div>
 	</section>
 
 	<!-- 3 columnas de blog por categoría (al azar) -->
 	{columns.length ? (
 		<section class="pt-6">
-			<h2 class="text-xl font-semibold mb-4">Del blog</h2>
+			<h2 class="text-xl font-semibold mb-4">Lecturas</h2>
 			<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
 				{columns.slice(0,3).map(({ title, post }) => (
 					<div class="space-y-2">
