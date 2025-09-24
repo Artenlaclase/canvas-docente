@@ -4,7 +4,11 @@ if (!totalPages || totalPages <= 1) {
   return null;
 }
 function pageHref(p: number) {
-  return p === 1 ? `${base}` : `${base}/page/${p}`;
+  // If base already has a query (e.g., /blog?q=abc), append &page=... for page > 1
+  if (p === 1) return `${base}`;
+  const hasQuery = base.includes('?');
+  if (hasQuery) return `${base}&page=${p}`;
+  return `${base}/page/${p}`;
 }
 const pages = Array.from({ length: totalPages }, (_, i) => i + 1).slice(0, 50); // safety cap
 ---

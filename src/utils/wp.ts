@@ -313,12 +313,13 @@ export async function listWpPosts(limit = 100): Promise<NormalizedPost[]> {
   return items.map(normalizePost);
 }
 
-export async function listWpPostsPage(page = 1, perPage = 9): Promise<{ posts: NormalizedPost[]; total: number; totalPages: number }>{
+export async function listWpPostsPage(page = 1, perPage = 9, opts?: { search?: string }): Promise<{ posts: NormalizedPost[]; total: number; totalPages: number }>{
   const base = getWpBase();
   if (!base) return { posts: [], total: 0, totalPages: 0 };
+  const searchPart = opts?.search ? `&search=${encodeURIComponent(opts.search)}` : '';
   const url = base.includes('rest_route=')
-    ? `${base}/posts&status=publish&_embed=1&per_page=${Math.min(perPage, 100)}&page=${Math.max(1, page)}`
-    : `${base}/posts?status=publish&_embed=1&per_page=${Math.min(perPage, 100)}&page=${Math.max(1, page)}`;
+    ? `${base}/posts&status=publish&_embed=1&per_page=${Math.min(perPage, 100)}&page=${Math.max(1, page)}${searchPart}`
+    : `${base}/posts?status=publish&_embed=1&per_page=${Math.min(perPage, 100)}&page=${Math.max(1, page)}${searchPart}`;
   const { data, headers } = await fetchJsonWithHeaders<WpRawPost[]>(url);
   const total = Number(headers.get('X-WP-Total') || headers.get('x-wp-total') || data.length || 0);
   const totalPages = Number(headers.get('X-WP-TotalPages') || headers.get('x-wp-totalpages') || (total ? Math.ceil(total / perPage) : 0));

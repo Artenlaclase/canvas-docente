@@ -4,19 +4,26 @@ import { Image } from 'astro:assets';
 interface Props {
   images: any[]; // astro:assets ImageMetadata[]
   altBase?: string;
+  // Optional: captions array matching images length; if provided, used below each thumb and in lightbox
+  captions?: string[];
 }
 
-const { images, altBase = 'Imagen de galería' } = Astro.props as Props;
+const { images, altBase = 'Imagen de galería', captions = [] } = Astro.props as Props;
 
 // Build src list and indices for client script
-const items = images.map((img, idx) => ({ idx, src: (img as any).src ?? img, w: (img as any).width, h: (img as any).height, caption: `${altBase} ${idx + 1}` }));
+const items = images.map((img, idx) => ({ idx, src: (img as any).src ?? img, w: (img as any).width, h: (img as any).height, caption: captions[idx] ?? `${altBase} ${idx + 1}` }));
 ---
 <div class="lb-root">
   <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
     {items.map((it) => (
-      <button type="button" class="group overflow-hidden rounded-lg border border-slate-200 focus:outline-none cursor-zoom-in" data-open-index={it.idx} aria-label={`Abrir ${altBase} ${it.idx + 1}`}>
-        <Image src={images[it.idx]} alt={`${altBase} ${it.idx + 1}`} class="aspect-[4/3] w-full object-cover group-hover:scale-[1.02] transition" />
-      </button>
+      <div class="overflow-hidden rounded-lg border border-slate-200">
+        <button type="button" class="group block focus:outline-none cursor-zoom-in" data-open-index={it.idx} aria-label={`Abrir ${altBase} ${it.idx + 1}`}>
+          <Image src={images[it.idx]} alt={`${altBase} ${it.idx + 1}`} class="aspect-[4/3] w-full object-cover group-hover:scale-[1.02] transition" />
+        </button>
+        <div class="px-2 py-2 border-t border-slate-200 bg-white">
+          <p class="text-xs text-slate-600 line-clamp-2">{it.caption}</p>
+        </div>
+      </div>
     ))}
   </div>
 

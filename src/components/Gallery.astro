@@ -13,6 +13,14 @@ const { items = [] } = Astro.props as { items: Array<any> };
       <div class="p-4">
         <h3 class="font-semibold">{it.data.title}</h3>
         <p class="text-xs text-slate-500 mt-1">{it.data.technique} · {it.data.year}</p>
+        {(it.data.description || it.data.school) && (
+          <div class="mt-2 text-sm text-slate-600">
+            {it.data.description && <p class="leading-snug">{it.data.description}</p>}
+            <p class="leading-snug text-slate-500">
+              {it.data.year}{it.data.school ? ` · ${it.data.school}` : ''}
+            </p>
+          </div>
+        )}
       </div>
     </div>
   ))}

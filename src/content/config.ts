@@ -8,6 +8,8 @@ const galeria = defineCollection({
       'Pintura', 'Collage', 'Audiovisual', 'Mosaico', 'Volumen', 'Máscaras', 'Lámparas', 'Diseño', 'Dibujo'
     ]),
     year: z.number().int(),
+    description: z.string().optional(),
+    school: z.string().optional(),
     cover: z.string().optional(),
     images: z.array(z.string()).default([]),
     tags: z.array(z.string()).default([]),
