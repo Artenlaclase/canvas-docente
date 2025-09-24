@@ -5,6 +5,7 @@ import Gallery from "../../../components/Gallery.astro";
 import LightboxGallery from "../../../components/LightboxGallery.astro";
 import { getCollection } from 'astro:content';
 import { Image } from 'astro:assets';
+import captionsMap from '../../../content/gallery-captions';
 
 export const prerender = true;
 export async function getStaticPaths() {
@@ -68,15 +69,28 @@ const techToMods: Record<string, Record<string, any>> = {
   'Dibujo': dibujoMods,
 };
 
-function imagesFor(tech: string) {
+function imagesEntriesFor(tech: string): Array<[string, any]> {
   const mods = techToMods[tech];
   if (!mods) return [];
-  return Object.entries(mods)
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([, mod]) => mod as any);
+  return Object.entries(mods).sort(([a], [b]) => a.localeCompare(b));
 }
 
-const techniqueImages = imagesFor(technique);
+const techniqueImageEntries = imagesEntriesFor(technique);
+const techniqueImages = techniqueImageEntries.map(([, mod]) => mod as any);
+
+// Per-image captions: description — year · school, if provided in captions map
+const captions = techniqueImageEntries.map(([path]) => {
+  const base = (path.split('/').pop() || path);
+  const rec = (captionsMap?.[technique] && captionsMap[technique][base]) || undefined;
+  if (!rec) return '';
+  const parts: string[] = [];
+  if (rec.description) parts.push(String(rec.description));
+  const tail: string[] = [];
+  if (rec.year) tail.push(String(rec.year));
+  if (rec.school) tail.push(String(rec.school));
+  if (tail.length) parts.push(tail.join(' · '));
+  return parts.join(' — ');
+});
 // Videos por técnica (por ahora, solo 'Máscaras')
 const videosByTechnique: Record<string, string[]> = {
   'Máscaras': [
@@ -128,7 +142,7 @@ const videoIds = videosByTechnique[technique] ?? [];
 
   {techniqueImages.length > 0 ? (
     <section class="mb-10">
-      <LightboxGallery images={techniqueImages} altBase={technique} />
+      <LightboxGallery images={techniqueImages} altBase={technique} captions={captions} />
     </section>
   ) : null}
 
