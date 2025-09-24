@@ -180,3 +180,49 @@
 .prose .gallery {
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
 }
+
+/* ========================= */
+/* Gutenberg Columns (WP)    */
+/* ========================= */
+/* Base container: flex with wrap and reasonable gap */
+.prose .wp-block-columns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem; /* can be adjusted or mapped to --wp--style--block-gap if needed */
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+}
+
+/* Columns stack by default on small screens */
+.prose .wp-block-columns > .wp-block-column {
+  flex: 1 1 100%;
+  min-width: 0;
+}
+
+/* Do not constrain images inside columns to 680px; use full column width */
+.prose .wp-block-columns img {
+  max-width: 100% !important;
+}
+
+/* At WP’s default breakpoint (≈782px), lay out columns side by side */
+@media (min-width: 782px) {
+  /* Equal distribution by default */
+  .prose .wp-block-columns > .wp-block-column {
+    flex: 1 1 0%;
+  }
+  /* Respect the explicit number of columns when WP adds has-N-columns */
+  .prose .wp-block-columns.has-2-columns > .wp-block-column:not([style*="flex-basis"]) { flex-basis: 50%; }
+  .prose .wp-block-columns.has-3-columns > .wp-block-column:not([style*="flex-basis"]) { flex-basis: 33.3333%; }
+  .prose .wp-block-columns.has-4-columns > .wp-block-column:not([style*="flex-basis"]) { flex-basis: 25%; }
+  .prose .wp-block-columns.has-5-columns > .wp-block-column:not([style*="flex-basis"]) { flex-basis: 20%; }
+  .prose .wp-block-columns.has-6-columns > .wp-block-column:not([style*="flex-basis"]) { flex-basis: 16.6667%; }
+}
+
+/* If the editor set "is-not-stacked-on-mobile", keep columns on mobile too */
+.prose .wp-block-columns.is-not-stacked-on-mobile > .wp-block-column {
+  flex: 1 1 50%;
+}
+@media (max-width: 781.98px) {
+  .prose .wp-block-columns.is-not-stacked-on-mobile.has-3-columns > .wp-block-column { flex-basis: 33.3333%; }
+  .prose .wp-block-columns.is-not-stacked-on-mobile.has-4-columns > .wp-block-column { flex-basis: 25%; }
+}
