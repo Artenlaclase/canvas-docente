@@ -62,37 +62,40 @@
   width: 100% !important;
 }
 
+/* Base image styling (non-gallery) */
 .prose .wp-block-gallery img,
 .prose .blocks-gallery-item img,
 .prose .gallery-item img {
+  display: block;
+}
+
+/* Consistent square tiles without overlapping captions: reserve space with ::before */
+.prose .wp-block-gallery .blocks-gallery-item figure,
+.prose .gallery .gallery-item figure {
+  position: relative;
+  margin: 0;
+}
+.prose .wp-block-gallery .blocks-gallery-item figure::before,
+.prose .gallery .gallery-item figure::before {
+  content: "";
+  display: block;
+  padding-top: 100%; /* 1:1 square area for the image */
+  border-radius: 0.5rem;
+}
+.prose .wp-block-gallery .blocks-gallery-item img,
+.prose .gallery .gallery-item img {
+  position: absolute;
+  inset: 0;
   width: 100% !important;
   height: 100% !important;
   object-fit: cover;
   display: block;
   border-radius: 0.5rem; /* match rounded-lg */
 }
-
-/* Enforce a consistent aspect ratio for gallery items */
-.prose .wp-block-gallery .blocks-gallery-item,
-.prose .blocks-gallery-grid .blocks-gallery-item,
-.prose .gallery .gallery-item {
-  aspect-ratio: 1 / 1; /* square tiles */
-}
-
-/* Ensure wrappers fill the item height */
-.prose .blocks-gallery-item > figure,
-.prose .gallery .gallery-item > figure,
-.prose .gallery .gallery-item > a,
-.prose .gallery .gallery-item > * {
-  height: 100%;
-}
-
-/* Anchors should be block-level to fill the tile */
-.prose .wp-block-gallery a,
-.prose .blocks-gallery-item a,
-.prose .gallery .gallery-item a {
-  display: block;
-  height: 100%;
+/* Captions sit below the image area so they won't be overlapped */
+.prose .blocks-gallery-item figcaption,
+.prose .gallery .gallery-item figcaption {
+  @apply text-sm text-slate-600 mt-2;
 }
 
 /* Optional: captions */
