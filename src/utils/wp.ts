@@ -47,6 +47,166 @@ export function getWpBase(): string | undefined {
   return ensureApiBase(b);
 }
 
+export function getSiteRootFromBase(base?: string): string | undefined {
+  if (!base) return undefined;
+  // rest_route variant: https://site.com/subdir/?rest_route=/wp/v2 => site root is https://site.com/subdir
+  if (base.includes('rest_route=')) {
+    const idx = base.indexOf('?rest_route=');
+    return idx !== -1 ? base.slice(0, idx) : base;
+  }
+  // wp-json variant: https://site.com[/subdir]/wp-json/wp/v2 => site root is https://site.com[/subdir]
+  const m = base.match(/^(https?:\/\/[^\s]+?)\/wp-json\//i);
+  if (m) return m[1];
+  // Fallback: strip trailing /wp-json or /wp-json/wp/v2 if present
+  return base.replace(/\/wp-json(?:\/wp\/v2)?$/i, '');
+}
+
+// Derive a media root for static assets (uploads), e.g., swap api. subdomain for main host but keep subdirectory like /blog
+export function getMediaRootFromBase(base?: string): string | undefined {
+  const site = getSiteRootFromBase(base);
+  if (!site) return undefined;
+  try {
+    const u = new URL(site);
+    let host = u.host;
+    // Common pattern: API served from api.example.com but media served from example.com
+    if (/^api\./i.test(host)) host = host.replace(/^api\./i, '');
+    // Optionally also normalize www if needed in future
+    const media = new URL(`${u.protocol}//${host}`);
+    // Preserve subdirectory path (e.g., /blog)
+    media.pathname = u.pathname || '/';
+    return media.toString().replace(/\/$/, '');
+  } catch {
+    return site;
+  }
+}
+
+export function getConfiguredMediaRoot(): string | undefined {
+  // Allow explicit override via env
+  // eslint-disable-next-line no-undef
+  const envAny: any = import.meta.env as any;
+  const override = envAny.WP_MEDIA_ROOT || envAny.PUBLIC_WP_MEDIA_ROOT;
+  if (override && /^https?:\/\//i.test(override)) return override.replace(/\/$/, '');
+  return getMediaRootFromBase(getWpBase());
+}
+
+function shouldProxyImages(): boolean {
+  // Enable with PUBLIC_IMAGE_PROXY=on (or true). Useful in dev to bypass hotlinking.
+  // eslint-disable-next-line no-undef
+  const envAny: any = import.meta.env as any;
+  const v = (envAny.PUBLIC_IMAGE_PROXY || envAny.IMAGE_PROXY || '').toString().toLowerCase();
+  return v === 'on' || v === 'true' || v === '1';
+}
+
+function normalizeImageUrl(url?: string, siteRoot?: string, mediaRoot?: string): string | undefined {
+  if (!url) return undefined;
+  const trimmed = url.trim();
+  const wrapProxy = (u: string) => (shouldProxyImages() ? `/api/img-proxy?url=${encodeURIComponent(u)}` : u);
+  if (/^https?:\/\//i.test(trimmed)) {
+    // Optionally upgrade http->https if same host and siteRoot is https
+    try {
+      const u = new URL(trimmed);
+      const s = siteRoot ? new URL(siteRoot) : undefined;
+      const m = mediaRoot ? new URL(mediaRoot) : undefined;
+      // Prefer https when target roots are https and host matches
+      if (s && u.protocol === 'http:' && s.protocol === 'https:' && u.host === s.host) u.protocol = 'https:';
+      if (m && u.protocol === 'http:' && m.protocol === 'https:' && u.host === m.host) u.protocol = 'https:';
+
+      // If it's an uploads URL, align host and subdirectory with mediaRoot or siteRoot
+      const desired = m || s; // mediaRoot has priority
+      if (desired) {
+        const d = new URL(desired);
+        const uploadsPath = '/wp-content/uploads';
+        if (u.pathname.startsWith(uploadsPath)) {
+          // Ensure correct host
+          u.host = d.host;
+          u.protocol = d.protocol;
+          // If the site is in a subdirectory (e.g., /blog), prefix it
+          const basePath = d.pathname && d.pathname !== '/' ? d.pathname.replace(/\/$/, '') : '';
+          if (basePath && !u.pathname.startsWith(basePath + uploadsPath)) {
+            u.pathname = basePath + u.pathname;
+          }
+          return wrapProxy(u.toString());
+        }
+      }
+    } catch {}
+    return wrapProxy(trimmed);
+  }
+  if (/^\/\//.test(trimmed)) {
+    return wrapProxy('https:' + trimmed);
+  }
+  if (trimmed.startsWith('/')) {
+    const base = (mediaRoot || siteRoot);
+    if (!base) return trimmed; // relative to current origin
+    return wrapProxy(base.replace(/\/$/, '') + trimmed);
+  }
+  // Other relative paths
+  if (mediaRoot || siteRoot) return wrapProxy((mediaRoot || siteRoot)!.replace(/\/$/, '') + '/' + trimmed.replace(/^\.\//, ''));
+  return wrapProxy(trimmed);
+}
+
+function rewriteContentHtml(html: string, siteRoot?: string, mediaRoot?: string): string {
+  if (!html) return html;
+  const norm = (u?: string) => normalizeImageUrl(u, siteRoot, mediaRoot) || u || '';
+  let out = html;
+  // Promote data-lazy-src and data-src to src
+  out = out.replace(/(<img[^>]*?)\sdata-lazy-src=["']([^"']+)["']([^>]*>)/gi, (_m, pre, url, post) => `${pre} src="${norm(url)}"${post}`);
+  out = out.replace(/(<img[^>]*?)\sdata-src=["']([^"']+)["']([^>]*>)/gi, (_m, pre, url, post) => `${pre} src="${norm(url)}"${post}`);
+  // Normalize existing src
+  out = out.replace(/(<img[^>]*?\ssrc=["'])([^"']+)(["'])/gi, (_m, pre, url, suf) => `${pre}${norm(url)}${suf}`);
+  // Normalize srcset (comma-separated list)
+  out = out.replace(/(<img[^>]*?\ssrcset=["'])([^"']+)(["'])/gi, (_m, pre, list, suf) => {
+    const fixed = list.split(',').map((entry: string) => {
+      const e = entry.trim();
+      if (!e) return e;
+      const parts = e.split(/\s+/);
+      const url = parts.shift() || '';
+      const rest = parts.join(' ');
+      return `${norm(url)}${rest ? ' ' + rest : ''}`;
+    }).join(', ');
+    return `${pre}${fixed}${suf}`;
+  });
+
+  // Helper to add/update query params on a URL string safely
+  const addParams = (raw: string, params: Record<string, string | number | boolean>): string => {
+    try {
+      const u = new URL(raw, 'https://dummy.base'); // base for relative safety
+      Object.entries(params).forEach(([k, v]) => {
+        const val = String(v);
+        // Avoid duplicates: if already present with different value, overwrite
+        u.searchParams.set(k, val);
+      });
+      // If original was absolute, return absolute; if relative, strip dummy base
+      if (/^https?:\/\//i.test(raw)) return u.toString();
+      return u.pathname + (u.search ? u.search : '') + (u.hash ? u.hash : '');
+    } catch {
+      return raw;
+    }
+  };
+
+  // Ensure HTML5 <video> tags start muted and inline
+  out = out.replace(/<video\b([^>]*)>/gi, (m, attrs) => {
+    let a = attrs || '';
+    if (!/\bmuted(\b|=)/i.test(a)) a += ' muted';
+    if (!/\bplaysinline(\b|=)/i.test(a)) a += ' playsinline';
+    // Prefer to keep existing controls
+    return `<video${a}>`;
+  });
+
+  // For YouTube embeds, add mute and playsinline parameters
+  out = out.replace(/(<iframe[^>]*?\ssrc=["'])([^"']+youtube\.com\/embed\/[^"']+)(["'][^>]*>)/gi, (_m, pre, src, suf) => {
+    const withParams = addParams(src, { mute: 1, playsinline: 1, rel: 0, modestbranding: 1 });
+    return `${pre}${withParams}${suf}`;
+  });
+
+  // For Vimeo embeds, add muted and playsinline
+  out = out.replace(/(<iframe[^>]*?\ssrc=["'])([^"']+player\.vimeo\.com\/video\/[^"']+)(["'][^>]*>)/gi, (_m, pre, src, suf) => {
+    const withParams = addParams(src, { muted: 1, playsinline: 1 });
+    return `${pre}${withParams}${suf}`;
+  });
+
+  return out;
+}
+
 async function fetchJson<T>(url: string): Promise<T> {
   const res = await fetch(url, { headers: { Accept: 'application/json' } });
   if (!res.ok) throw new Error(`WP fetch failed ${res.status}: ${url}`);
@@ -71,12 +231,31 @@ function stripHtml(input: string): string {
     .trim();
 }
 
+function firstImageFromHtml(html?: string): string | undefined {
+  if (!html || typeof html !== 'string') return undefined;
+  // Prefer explicit src; also consider common lazy attributes
+  const m = html.match(/<(?:img)[^>]+(?:data-lazy-src|data-src|src)=["']([^"']+)["']/i);
+  return m?.[1];
+}
+
 function getFeaturedImage(raw: WpRawPost): string | undefined {
-  // Preferred: _embedded['wp:featuredmedia'][0].source_url
   const emb = raw._embedded;
   const mediaArr = emb?.['wp:featuredmedia'] as Array<any> | undefined;
-  const url = mediaArr?.[0]?.source_url || raw.jetpack_featured_media_url;
-  return typeof url === 'string' ? url : undefined;
+  const media = mediaArr?.[0];
+  // Collect candidates with width if available
+  type Candidate = { url: string; width?: number };
+  const candidates: Candidate[] = [];
+  if (typeof media?.source_url === 'string') candidates.push({ url: media.source_url, width: media?.media_details?.width });
+  if (typeof raw.jetpack_featured_media_url === 'string') candidates.push({ url: raw.jetpack_featured_media_url });
+  const sizes = media?.media_details?.sizes || {};
+  for (const key of Object.keys(sizes)) {
+    const s = sizes[key];
+    if (s && typeof s.source_url === 'string') candidates.push({ url: s.source_url, width: s.width });
+  }
+  if (candidates.length === 0) return undefined;
+  // Sort by width desc (undefined last) and pick first
+  candidates.sort((a, b) => (b.width ?? -1) - (a.width ?? -1));
+  return candidates[0].url;
 }
 
 function getAuthorName(raw: WpRawPost): string | undefined {
@@ -90,6 +269,15 @@ export function normalizePost(raw: WpRawPost): NormalizedPost {
   const title = raw.title?.rendered ?? '';
   const excerpt = raw.excerpt?.rendered ?? '';
   const content = raw.content?.rendered ?? '';
+  const base = getWpBase();
+  const siteRoot = getSiteRootFromBase(base);
+  const mediaRoot = getConfiguredMediaRoot();
+  let coverRaw = getFeaturedImage(raw);
+  if (!coverRaw) {
+    const firstImg = firstImageFromHtml(content);
+    if (firstImg) coverRaw = firstImg;
+  }
+  const contentHtml = rewriteContentHtml(content, siteRoot, mediaRoot);
   return {
     id: raw.id,
     slug: raw.slug,
@@ -97,10 +285,10 @@ export function normalizePost(raw: WpRawPost): NormalizedPost {
       title: title.replace(/<[^>]+>/g, ''),
       excerpt: stripHtml(excerpt),
       date: raw.date,
-      cover: getFeaturedImage(raw),
+      cover: normalizeImageUrl(coverRaw, siteRoot, mediaRoot),
       author: getAuthorName(raw),
     },
-    contentHtml: content,
+    contentHtml,
   };
 }
 

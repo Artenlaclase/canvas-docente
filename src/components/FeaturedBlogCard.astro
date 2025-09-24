@@ -1,25 +1,22 @@
 ---
 const { post } = Astro.props as { post: any };
-// Intentar resolver assets locales bajo src/assets/images
+// Resolver portada como en BlogCard
 const assets = import.meta.glob('../assets/images/**/*', { eager: true, import: 'default' }) as Record<string, any>;
 const coverPath = post.data.cover as string | undefined;
 const isLocal = !!coverPath && (/^(\/|\.\/|\.\.\/)/.test(coverPath) || coverPath.startsWith('/src/'));
 
 function resolveCover(path?: string): string | undefined {
   if (!path) return undefined;
-  // 1) Si viene como /src/..., convertir a relativo esperado por el glob
   if (path.startsWith('/src/')) {
-    const key = '..' + path.replace('/src', ''); // '/src/assets/...' => '../assets/...'
+    const key = '..' + path.replace('/src', '');
     if (assets[key]) return typeof assets[key] === 'string' ? assets[key] : assets[key]?.src;
   }
-  // 2) Si parece relativo desde otro directorio (../../assets/images/...), quedarnos con la parte desde assets/images/
   const idx = path.indexOf('assets/images/');
   if (idx !== -1) {
-    const tail = path.slice(idx); // 'assets/images/...'
-    const key = '..' + '/' + tail.replace(/^assets\//, 'assets/'); // '../assets/images/...'
+    const tail = path.slice(idx);
+    const key = '..' + '/' + tail.replace(/^assets\//, 'assets/');
     if (assets[key]) return typeof assets[key] === 'string' ? assets[key] : assets[key]?.src;
   }
-  // 3) Buscar por nombre de archivo como último recurso
   const file = path.split('/').pop();
   if (file) {
     const match = Object.keys(assets).find((k) => k.endsWith('/' + file));
@@ -36,25 +33,22 @@ function firstImageFromHtml(html?: string): string | undefined {
 
 const resolved = resolveCover(coverPath);
 if (import.meta.env.DEV && coverPath && isLocal && !resolved) {
-  console.warn(`[BlogCard] No se pudo resolver la portada local: ${coverPath}. Asegúrate de que exista en src/assets/images y usa una ruta relativa, por ejemplo ../../assets/images/...`);
+  console.warn(`[FeaturedBlogCard] No se pudo resolver la portada local: ${coverPath}.`);
 }
 
-// WP posts (normalized) have numeric id; local content does not
 const isWpPost = typeof post.id === 'number';
-// For WP posts: ONLY use featured image (cover). If missing, don't fallback to HTML to avoid randomness.
-// For local posts: use resolved asset or cover, and as last resort the first image in content.
 const fallbackHtmlImg = !coverPath && !isWpPost ? firstImageFromHtml(post.contentHtml) : undefined;
 const displayCover = isWpPost ? (coverPath || undefined) : (resolved || coverPath || fallbackHtmlImg);
 ---
-<a href={`/blog/${post.slug}`} class="group block rounded-lg overflow-hidden border border-slate-200 hover:shadow-md transition">
+<a href={`/blog/${post.slug}`} class="group block rounded-xl overflow-hidden border border-slate-200 hover:shadow-lg transition bg-white">
   {displayCover ? (
-    <img src={displayCover} alt={post.data.title || 'Imagen del artículo'} loading="lazy" class="aspect-[16/9] w-full object-cover group-hover:scale-[1.02] transition" />
+    <img src={displayCover} alt={post.data.title || 'Imagen del artículo'} loading="lazy" class="aspect-[16/9] w-full object-cover group-hover:scale-[1.01] transition" />
   ) : null}
-  <div class="p-4">
-    <h3 class="font-semibold">{post.data.title}</h3>
-    <p class="text-sm text-slate-600 mt-1 line-clamp-2">{post.data.excerpt}</p>
-    <p class="text-xs text-slate-500 mt-2">
+  <div class="p-6">
+    <h2 class="text-2xl md:text-3xl font-bold leading-tight">{post.data.title}</h2>
+    <p class="text-sm text-slate-500 mt-2">
       {post.data.author ? `Por ${post.data.author}` : new Date(post.data.date).toLocaleDateString('es')}
     </p>
+    <p class="text-base md:text-lg text-slate-700 mt-3 line-clamp-3">{post.data.excerpt}</p>
   </div>
 </a>
