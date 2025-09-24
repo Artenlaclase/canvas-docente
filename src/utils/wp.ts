@@ -61,38 +61,92 @@ export function getSiteRootFromBase(base?: string): string | undefined {
   return base.replace(/\/wp-json(?:\/wp\/v2)?$/i, '');
 }
 
-function normalizeImageUrl(url?: string, siteRoot?: string): string | undefined {
+// Derive a media root for static assets (uploads), e.g., swap api. subdomain for main host but keep subdirectory like /blog
+export function getMediaRootFromBase(base?: string): string | undefined {
+  const site = getSiteRootFromBase(base);
+  if (!site) return undefined;
+  try {
+    const u = new URL(site);
+    let host = u.host;
+    // Common pattern: API served from api.example.com but media served from example.com
+    if (/^api\./i.test(host)) host = host.replace(/^api\./i, '');
+    // Optionally also normalize www if needed in future
+    const media = new URL(`${u.protocol}//${host}`);
+    // Preserve subdirectory path (e.g., /blog)
+    media.pathname = u.pathname || '/';
+    return media.toString().replace(/\/$/, '');
+  } catch {
+    return site;
+  }
+}
+
+export function getConfiguredMediaRoot(): string | undefined {
+  // Allow explicit override via env
+  // eslint-disable-next-line no-undef
+  const envAny: any = import.meta.env as any;
+  const override = envAny.WP_MEDIA_ROOT || envAny.PUBLIC_WP_MEDIA_ROOT;
+  if (override && /^https?:\/\//i.test(override)) return override.replace(/\/$/, '');
+  return getMediaRootFromBase(getWpBase());
+}
+
+function shouldProxyImages(): boolean {
+  // Enable with PUBLIC_IMAGE_PROXY=on (or true). Useful in dev to bypass hotlinking.
+  // eslint-disable-next-line no-undef
+  const envAny: any = import.meta.env as any;
+  const v = (envAny.PUBLIC_IMAGE_PROXY || envAny.IMAGE_PROXY || '').toString().toLowerCase();
+  return v === 'on' || v === 'true' || v === '1';
+}
+
+function normalizeImageUrl(url?: string, siteRoot?: string, mediaRoot?: string): string | undefined {
   if (!url) return undefined;
   const trimmed = url.trim();
+  const wrapProxy = (u: string) => (shouldProxyImages() ? `/api/img-proxy?url=${encodeURIComponent(u)}` : u);
   if (/^https?:\/\//i.test(trimmed)) {
     // Optionally upgrade http->https if same host and siteRoot is https
     try {
       const u = new URL(trimmed);
-      if (siteRoot) {
-        const s = new URL(siteRoot);
-        if (u.protocol === 'http:' && s.protocol === 'https:' && u.host === s.host) {
-          u.protocol = 'https:';
-          return u.toString();
+      const s = siteRoot ? new URL(siteRoot) : undefined;
+      const m = mediaRoot ? new URL(mediaRoot) : undefined;
+      // Prefer https when target roots are https and host matches
+      if (s && u.protocol === 'http:' && s.protocol === 'https:' && u.host === s.host) u.protocol = 'https:';
+      if (m && u.protocol === 'http:' && m.protocol === 'https:' && u.host === m.host) u.protocol = 'https:';
+
+      // If it's an uploads URL, align host and subdirectory with mediaRoot or siteRoot
+      const desired = m || s; // mediaRoot has priority
+      if (desired) {
+        const d = new URL(desired);
+        const uploadsPath = '/wp-content/uploads';
+        if (u.pathname.startsWith(uploadsPath)) {
+          // Ensure correct host
+          u.host = d.host;
+          u.protocol = d.protocol;
+          // If the site is in a subdirectory (e.g., /blog), prefix it
+          const basePath = d.pathname && d.pathname !== '/' ? d.pathname.replace(/\/$/, '') : '';
+          if (basePath && !u.pathname.startsWith(basePath + uploadsPath)) {
+            u.pathname = basePath + u.pathname;
+          }
+          return wrapProxy(u.toString());
         }
       }
     } catch {}
-    return trimmed;
+    return wrapProxy(trimmed);
   }
   if (/^\/\//.test(trimmed)) {
-    return 'https:' + trimmed;
+    return wrapProxy('https:' + trimmed);
   }
   if (trimmed.startsWith('/')) {
-    if (!siteRoot) return trimmed; // relative to current origin
-    return siteRoot.replace(/\/$/, '') + trimmed;
+    const base = (mediaRoot || siteRoot);
+    if (!base) return trimmed; // relative to current origin
+    return wrapProxy(base.replace(/\/$/, '') + trimmed);
   }
   // Other relative paths
-  if (siteRoot) return siteRoot.replace(/\/$/, '') + '/' + trimmed.replace(/^\.\//, '');
-  return trimmed;
+  if (mediaRoot || siteRoot) return wrapProxy((mediaRoot || siteRoot)!.replace(/\/$/, '') + '/' + trimmed.replace(/^\.\//, ''));
+  return wrapProxy(trimmed);
 }
 
-function rewriteContentHtml(html: string, siteRoot?: string): string {
+function rewriteContentHtml(html: string, siteRoot?: string, mediaRoot?: string): string {
   if (!html) return html;
-  const norm = (u?: string) => normalizeImageUrl(u, siteRoot) || u || '';
+  const norm = (u?: string) => normalizeImageUrl(u, siteRoot, mediaRoot) || u || '';
   let out = html;
   // Promote data-lazy-src and data-src to src
   out = out.replace(/(<img[^>]*?)\sdata-lazy-src=["']([^"']+)["']([^>]*>)/gi, (_m, pre, url, post) => `${pre} src="${norm(url)}"${post}`);
@@ -176,13 +230,15 @@ export function normalizePost(raw: WpRawPost): NormalizedPost {
   const title = raw.title?.rendered ?? '';
   const excerpt = raw.excerpt?.rendered ?? '';
   const content = raw.content?.rendered ?? '';
-  const siteRoot = getSiteRootFromBase(getWpBase());
+  const base = getWpBase();
+  const siteRoot = getSiteRootFromBase(base);
+  const mediaRoot = getConfiguredMediaRoot();
   let coverRaw = getFeaturedImage(raw);
   if (!coverRaw) {
     const firstImg = firstImageFromHtml(content);
     if (firstImg) coverRaw = firstImg;
   }
-  const contentHtml = rewriteContentHtml(content, siteRoot);
+  const contentHtml = rewriteContentHtml(content, siteRoot, mediaRoot);
   return {
     id: raw.id,
     slug: raw.slug,
@@ -190,7 +246,7 @@ export function normalizePost(raw: WpRawPost): NormalizedPost {
       title: title.replace(/<[^>]+>/g, ''),
       excerpt: stripHtml(excerpt),
       date: raw.date,
-      cover: normalizeImageUrl(coverRaw, siteRoot),
+      cover: normalizeImageUrl(coverRaw, siteRoot, mediaRoot),
       author: getAuthorName(raw),
     },
     contentHtml,
