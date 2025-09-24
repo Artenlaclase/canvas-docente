@@ -165,6 +165,45 @@ function rewriteContentHtml(html: string, siteRoot?: string, mediaRoot?: string)
     }).join(', ');
     return `${pre}${fixed}${suf}`;
   });
+
+  // Helper to add/update query params on a URL string safely
+  const addParams = (raw: string, params: Record<string, string | number | boolean>): string => {
+    try {
+      const u = new URL(raw, 'https://dummy.base'); // base for relative safety
+      Object.entries(params).forEach(([k, v]) => {
+        const val = String(v);
+        // Avoid duplicates: if already present with different value, overwrite
+        u.searchParams.set(k, val);
+      });
+      // If original was absolute, return absolute; if relative, strip dummy base
+      if (/^https?:\/\//i.test(raw)) return u.toString();
+      return u.pathname + (u.search ? u.search : '') + (u.hash ? u.hash : '');
+    } catch {
+      return raw;
+    }
+  };
+
+  // Ensure HTML5 <video> tags start muted and inline
+  out = out.replace(/<video\b([^>]*)>/gi, (m, attrs) => {
+    let a = attrs || '';
+    if (!/\bmuted(\b|=)/i.test(a)) a += ' muted';
+    if (!/\bplaysinline(\b|=)/i.test(a)) a += ' playsinline';
+    // Prefer to keep existing controls
+    return `<video${a}>`;
+  });
+
+  // For YouTube embeds, add mute and playsinline parameters
+  out = out.replace(/(<iframe[^>]*?\ssrc=["'])([^"']+youtube\.com\/embed\/[^"']+)(["'][^>]*>)/gi, (_m, pre, src, suf) => {
+    const withParams = addParams(src, { mute: 1, playsinline: 1, rel: 0, modestbranding: 1 });
+    return `${pre}${withParams}${suf}`;
+  });
+
+  // For Vimeo embeds, add muted and playsinline
+  out = out.replace(/(<iframe[^>]*?\ssrc=["'])([^"']+player\.vimeo\.com\/video\/[^"']+)(["'][^>]*>)/gi, (_m, pre, src, suf) => {
+    const withParams = addParams(src, { muted: 1, playsinline: 1 });
+    return `${pre}${withParams}${suf}`;
+  });
+
   return out;
 }
 
