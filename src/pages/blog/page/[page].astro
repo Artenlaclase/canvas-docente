@@ -1,0 +1,80 @@
+---
+import BaseLayout from "../../../layouts/BaseLayout.astro";
+import Header from "../../../components/Header.astro";
+import BlogCard from "../../../components/BlogCard.astro";
+import BlogPagination from "../../../components/BlogPagination.astro";
+import { getCollection } from 'astro:content';
+import { getWpBase, listWpPostsPage } from "../../../utils/wp";
+
+export const prerender = true;
+
+const PER_PAGE = 9;
+
+export async function getStaticPaths() {
+  const PER_PAGE = 9;
+  const paths: any[] = [];
+  const wpBase = getWpBase();
+  if (wpBase) {
+    try {
+      const { totalPages } = await listWpPostsPage(1, PER_PAGE);
+      if (totalPages > 1) {
+        for (let p = 2; p <= totalPages; p++) {
+          paths.push({ params: { page: String(p) }, props: { pageNum: p, totalPages } });
+        }
+      }
+      // Even if totalPages <=1 in WP, we might still have local content pages. We'll add those below.
+    } catch (e) {
+      console.warn('[Blog pagination] WP fetch failed, falling back to local pages:', e);
+    }
+  }
+
+  // Local content pagination (fallback or additional if WP had <=1 page)
+  const locals = await getCollection('blog');
+  const totalLocalPages = Math.ceil(locals.length / PER_PAGE);
+  if (totalLocalPages > 1) {
+    for (let p = 2; p <= totalLocalPages; p++) {
+      // Avoid duplicating paths if already present for same page number
+      if (!paths.find((x) => x.params.page === String(p))) {
+        paths.push({ params: { page: String(p) }, props: { pageNum: p, totalPages: totalLocalPages } });
+      }
+    }
+  }
+
+  return paths;
+}
+
+const { page } = Astro.params;
+const pageNum = Number(page || '1');
+
+let current = pageNum;
+let totalPages = 1;
+let posts: any[] = [];
+
+const wpBase = getWpBase();
+if (wpBase) {
+  try {
+    const { posts: wpPosts, totalPages: tp } = await listWpPostsPage(pageNum, PER_PAGE);
+    if (wpPosts.length) {
+      posts = wpPosts;
+      totalPages = tp || 1;
+    }
+  } catch (e) {
+    console.warn('[Blog] WP page fetch failed, trying local collection:', e);
+  }
+}
+
+if (!posts.length) {
+  const locals = (await getCollection('blog')).sort((a,b) => +new Date(b.data.date) - +new Date(a.data.date));
+  totalPages = Math.max(1, Math.ceil(locals.length / PER_PAGE));
+  const start = (pageNum - 1) * PER_PAGE;
+  posts = locals.slice(start, start + PER_PAGE);
+}
+---
+<BaseLayout title={`Blog - Página ${current} | Canvas Docente`}>
+  <Fragment slot="header"><Header /></Fragment>
+  <h1 class="text-2xl font-semibold mb-6">Blog</h1>
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+    {posts.map((post) => <BlogCard post={post} />)}
+  </div>
+  <BlogPagination current={current} totalPages={totalPages} base="/blog" />
+</BaseLayout>

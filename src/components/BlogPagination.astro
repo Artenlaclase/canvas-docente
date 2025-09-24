@@ -1,0 +1,27 @@
+---
+const { current, totalPages, base = '/blog' } = Astro.props as { current: number; totalPages: number; base?: string };
+if (!totalPages || totalPages <= 1) {
+  return null;
+}
+function pageHref(p: number) {
+  return p === 1 ? `${base}` : `${base}/page/${p}`;
+}
+const pages = Array.from({ length: totalPages }, (_, i) => i + 1).slice(0, 50); // safety cap
+---
+<nav class="mt-8 flex items-center justify-center gap-2" aria-label="Paginación">
+  <a href={current > 1 ? pageHref(current - 1) : undefined}
+     aria-disabled={current === 1}
+     class={`px-3 py-1 rounded border ${current === 1 ? 'text-slate-400 border-slate-200 pointer-events-none' : 'hover:bg-slate-50'}`}>
+    « Anterior
+  </a>
+  {pages.map((p) => (
+    <a href={pageHref(p)}
+       class={`px-3 py-1 rounded border ${p === current ? 'bg-slate-900 text-white border-slate-900' : 'hover:bg-slate-50'}`}>{p}</a>
+  ))}
+  <a href={current < totalPages ? pageHref(current + 1) : undefined}
+     aria-disabled={current === totalPages}
+     class={`px-3 py-1 rounded border ${current === totalPages ? 'text-slate-400 border-slate-200 pointer-events-none' : 'hover:bg-slate-50'}`}>
+    Siguiente »
+  </a>
+  
+</nav>

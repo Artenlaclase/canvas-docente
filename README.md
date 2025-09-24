@@ -157,3 +157,34 @@ El proyecto intenta resolver automáticamente imágenes locales bajo `src/assets
 ### Notas
 - Los estilos de Tailwind están en `src/styles/global.css` y se importan en `BaseLayout.astro`.
 - Si ves advertencias en el editor sobre `@tailwind` o `@apply`, son del analizador estático del editor. En la compilación real de Astro se procesan con PostCSS/Tailwind.
+
+### Blog con WordPress (opcional)
+
+Puedes usar tu sitio WordPress como backend para el blog usando la API REST.
+
+Configuración:
+
+1. Define una variable de entorno con la URL base de tu WP:
+   - `WP_API_BASE` (recomendado) o `PUBLIC_WP_API_BASE`
+   - Acepta:
+     - `https://tu-sitio.com` (se completará a `/wp-json/wp/v2`)
+     - o directamente `https://tu-sitio.com/wp-json/wp/v2`
+  - o instalaciones en subcarpeta usando `rest_route` (por ej. `https://tu-sitio.com/blog/?rest_route=/wp/v2`)
+2. Publica entradas con estado "publicado". Se usará la imagen destacada si está disponible.
+
+Comportamiento:
+
+- Si la variable está definida, las rutas `/blog` y `/blog/[slug]` buscarán primero en WordPress. Si hay un fallo o no hay entradas, se hace fallback a la colección local (`src/content/blog`).
+- El contenido de WP se renderiza como HTML (`content.rendered` de la API). Asegúrate de confiar en tu origen WP o filtrar en WP.
+
+Limitaciones iniciales:
+
+- Paginación: `/blog` muestra 9 posts por página y usa `/blog/page/[n]` para las siguientes páginas. Con WP se usa el conteo de `X-WP-TotalPages`.
+- Taxonomías/categorías: no se exponen aún en la UI.
+
+Ejemplo `.env`:
+
+```
+# Sitio WP en subcarpeta
+WP_API_BASE=https://artenlaclase.cl/blog/?rest_route=/wp/v2
+```

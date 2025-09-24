@@ -2,16 +2,35 @@
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import Header from "../../components/Header.astro";
 import { getCollection } from 'astro:content';
+import { getWpBase, getWpPostBySlug, type NormalizedPost } from "../../utils/wp";
 
-export const prerender = true;
-export async function getStaticPaths() {
-  const posts = await getCollection('blog');
-  return posts.map((post) => ({ params: { slug: post.slug }, props: { post } }));
+export const prerender = false;
+
+// SSR: resolver el post por slug en cada request para reflejar cambios inmediatos en WordPress
+const { slug } = Astro.params;
+let wpPost: NormalizedPost | undefined;
+let localPost: any | undefined;
+const wpBase = getWpBase();
+if (wpBase && slug) {
+  try {
+    wpPost = await getWpPostBySlug(slug);
+  } catch (e) {
+    console.warn('[Blog SSR] Error al obtener post WP por slug:', e);
+  }
 }
-
-const { post } = Astro.props as { post: any };
-if (!post) throw new Error('Post no encontrado');
-const { Content } = await post.render();
+if (!wpPost && slug) {
+  const all = await getCollection('blog');
+  localPost = all.find((p) => p.slug === slug);
+}
+if (!wpPost && !localPost) {
+  return new Response('Post no encontrado', { status: 404 });
+}
+const isWP = !!wpPost;
+let Content: any = null;
+if (!isWP && localPost) {
+  const rendered = await localPost.render();
+  Content = rendered.Content;
+}
 // Resolver portada: assets locales bajo src/assets/images y retorno de URL string
 const assets = import.meta.glob('../../assets/images/**/*', { eager: true, import: 'default' }) as Record<string, any>;
 /**
@@ -46,22 +65,149 @@ function resolveCoverPath(path: string | undefined): string | undefined {
   return undefined;
 }
 ---
-<BaseLayout title={`${post.data.title} | Blog`}>
+<BaseLayout title={`${(isWP ? wpPost!.data.title : localPost.data.title)} | Blog`}>
   <Fragment slot="header"><Header /></Fragment>
-  <article class="prose max-w-none">
-    <h1>{post.data.title}</h1>
-    {(() => {
-      const coverPath = post.data.cover as string | undefined;
-      const resolvedUrl = resolveCoverPath(coverPath);
-      if (import.meta.env.DEV && coverPath && (/^(\/.|\.\/|\.\.\/)/.test(coverPath) || coverPath.startsWith('/src/')) && !resolvedUrl) {
-        console.warn(`[Blog post] No se pudo resolver la portada local: ${coverPath}. Asegúrate de que exista en src/assets/images y usa una ruta relativa, por ejemplo ../../assets/images/...`);
-      }
-      const finalSrc = (resolvedUrl || coverPath || '') + '';
-      return coverPath ? (
-        <img src={finalSrc} alt={post.data.title} class="rounded-lg" loading="lazy" />
-      ) : null;
-    })()}
-    <p class="text-sm text-slate-500">{new Date(post.data.date).toLocaleDateString('es')}</p>
-    <Content />
+  <article class="prose prose-lg md:prose-xl mx-auto max-w-4xl">
+    <h1>{isWP ? wpPost!.data.title : localPost.data.title}</h1>
+    {isWP ? (
+      wpPost!.data.cover ? (
+        <img
+          src={wpPost!.data.cover}
+          alt={wpPost!.data.title}
+          loading="lazy"
+          class="w-full aspect-[16/9] object-cover rounded-lg"
+        />
+      ) : null
+    ) : (
+      (() => {
+        const coverPath = localPost.data.cover as string | undefined;
+        const resolvedUrl = resolveCoverPath(coverPath);
+        if (import.meta.env.DEV && coverPath && (/^(\/.|\.\/|\.\.\/)/.test(coverPath) || coverPath.startsWith('/src/')) && !resolvedUrl) {
+          console.warn(`[Blog post] No se pudo resolver la portada local: ${coverPath}. Asegúrate de que exista en src/assets/images y usa una ruta relativa, por ejemplo ../../assets/images/...`);
+        }
+        const finalSrc = (resolvedUrl || coverPath || '') + '';
+        return coverPath ? (
+          <img
+            src={finalSrc}
+            alt={localPost.data.title}
+            loading="lazy"
+            class="w-full aspect-[16/9] object-cover rounded-lg"
+          />
+        ) : null;
+      })()
+    )}
+    <p class="text-sm text-slate-500">
+      {isWP ? (wpPost!.data.author ? `Por ${wpPost!.data.author}` : new Date(wpPost!.data.date).toLocaleDateString('es')) : new Date(localPost.data.date).toLocaleDateString('es')}
+    </p>
+    {isWP ? (
+      <div class="wp-content" set:html={wpPost!.contentHtml} />
+    ) : (
+      <div class="wp-content"><Content /></div>
+    )}
   </article>
+  {/* Lightbox modal for post images */}
+  <div id="post-lightbox" class="fixed inset-0 z-[9999] hidden" aria-hidden="true">
+    <div id="post-backdrop" class="absolute inset-0 bg-black/70"></div>
+    <div class="absolute inset-0 flex items-center justify-center p-4">
+      <div class="relative w-full max-w-6xl">
+        <div class="relative bg-black rounded-lg overflow-hidden">
+          <button id="post-closeBtn" class="absolute top-2 right-2 z-10 h-10 w-10 grid place-items-center rounded-full bg-black/50 text-white text-xl hover:bg-black/70" aria-label="Cerrar">×</button>
+          <button id="post-prevBtn" class="absolute left-2 top-1/2 -translate-y-1/2 z-10 h-10 w-10 rounded-full bg-black/40 text-white hover:bg-black/60">‹</button>
+          <button id="post-nextBtn" class="absolute right-2 top-1/2 -translate-y-1/2 z-10 h-10 w-10 rounded-full bg-black/40 text-white hover:bg-black/60">›</button>
+          <div class="w-[min(100vw,96rem)] max-h-[95vh] pt-12 flex items-center justify-center">
+            <img id="post-lightboxImage" class="max-h-[95vh] w-auto object-contain select-none" alt="Imagen de entrada" />
+          </div>
+        </div>
+        <div id="post-counter" class="mt-2 text-center text-white/90"></div>
+        <div id="post-caption" class="mt-1 text-center text-white/80 text-sm"></div>
+      </div>
+    </div>
+  </div>
+  <script>
+  // @ts-nocheck
+    (function(){
+      function initPostLightbox(){
+        const container = document.querySelector('article .wp-content');
+        if (!container) return;
+        /** @type {HTMLImageElement[]} */
+        const imgs = Array.from(container.querySelectorAll('img'))
+          .filter(img => img && (img.currentSrc || img.src));
+        if (imgs.length === 0) return;
+
+        // Make images look clickable
+        imgs.forEach(img => { if (!img.style.cursor) img.style.cursor = 'zoom-in'; });
+
+        // Prepare (src, caption) list
+        const items = imgs.map((img) => ({
+          src: img.currentSrc || img.src,
+          caption: img.getAttribute('alt') || ''
+        }));
+
+        const lightbox = document.getElementById('post-lightbox');
+        if (!lightbox) return;
+        const scope = lightbox;
+        const imgEl = scope.querySelector('#post-lightboxImage');
+        const closeBtn = scope.querySelector('#post-closeBtn');
+        const nextBtn = scope.querySelector('#post-nextBtn');
+        const prevBtn = scope.querySelector('#post-prevBtn');
+        const backdrop = scope.querySelector('#post-backdrop');
+        const counter = scope.querySelector('#post-counter');
+        const captionEl = scope.querySelector('#post-caption');
+
+        let current = 0;
+        let scale = 1, offsetX = 0, offsetY = 0, isPanning = false, startX = 0, startY = 0;
+        function applyTransform(){
+          if (!imgEl) return;
+          imgEl.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${scale})`;
+          imgEl.style.transition = 'transform 120ms ease-out';
+          imgEl.style.cursor = scale > 1 ? 'grab' : 'default';
+        }
+        function resetZoom(){ scale = 1; offsetX = 0; offsetY = 0; applyTransform(); }
+        function update(){
+          if (!imgEl) return;
+          imgEl.setAttribute('src', items[current].src);
+          if (counter) counter.textContent = `${current + 1} / ${items.length}`;
+          if (captionEl) captionEl.textContent = items[current].caption || '';
+          resetZoom();
+        }
+        function openAt(idx){ current = idx; update(); scope.classList.remove('hidden'); scope.setAttribute('aria-hidden','false'); scope.style.display='block'; document.body.style.overflow='hidden'; }
+        function close(){ scope.classList.add('hidden'); scope.setAttribute('aria-hidden','true'); scope.style.display='none'; document.body.style.overflow=''; }
+        function next(){ current = (current + 1) % items.length; update(); }
+        function prev(){ current = (current - 1 + items.length) % items.length; update(); }
+
+        // Delegate clicks (also handle anchors wrapping img)
+        container.addEventListener('click', (e) => {
+          const target = e.target;
+          const img = target && target.closest ? target.closest('img') : null;
+          if (!img) return;
+          const index = imgs.indexOf(img);
+          if (index >= 0) {
+            e.preventDefault();
+            openAt(index);
+          }
+        });
+
+        if (closeBtn) closeBtn.addEventListener('click', close);
+        if (backdrop) backdrop.addEventListener('click', close);
+        if (nextBtn) nextBtn.addEventListener('click', next);
+        if (prevBtn) prevBtn.addEventListener('click', prev);
+        document.addEventListener('keydown', (e) => {
+          if (scope.classList.contains('hidden')) return;
+          if (e.key === 'Escape') close();
+          if (e.key === 'ArrowRight') next();
+          if (e.key === 'ArrowLeft') prev();
+        });
+
+        if (imgEl) imgEl.addEventListener('dblclick', () => { scale = scale > 1 ? 1 : 2; offsetX = 0; offsetY = 0; applyTransform(); });
+        if (imgEl) imgEl.addEventListener('wheel', (e) => { e.preventDefault(); const d = Math.sign(e.deltaY); const prev = scale; scale = Math.min(5, Math.max(1, scale + (d > 0 ? -0.2 : 0.2))); if (scale === 1) { offsetX = 0; offsetY = 0; } if (prev !== scale) applyTransform(); }, { passive: false });
+        if (imgEl) imgEl.addEventListener('mousedown', (e) => { if (scale <= 1) return; isPanning = true; startX = e.clientX - offsetX; startY = e.clientY - offsetY; imgEl.style.cursor = 'grabbing'; });
+        document.addEventListener('mousemove', (e) => { if (!isPanning) return; offsetX = e.clientX - startX; offsetY = e.clientY - startY; applyTransform(); });
+        document.addEventListener('mouseup', () => { isPanning = false; if (imgEl) imgEl.style.cursor = 'grab'; });
+      }
+
+      if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initPostLightbox);
+      else initPostLightbox();
+      window.addEventListener('beforeunload', () => { document.body.style.overflow = ''; });
+    })();
+  </script>
 </BaseLayout>

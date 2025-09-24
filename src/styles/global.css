@@ -6,3 +6,174 @@
 .prose {
   @apply prose-slate;
 }
+
+/* WordPress content tweaks */
+/* Responsive gallery grid for classic WP galleries (blocks and shortcodes) */
+.prose .wp-block-gallery,
+.prose .blocks-gallery-grid,
+.prose .gallery {
+  display: grid;
+  gap: 0.75rem;
+}
+
+/* Auto-fit columns with a reasonable min size */
+.prose .wp-block-gallery,
+.prose .blocks-gallery-grid {
+  /* Make thumbs larger and uniform (square) */
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  list-style: none;
+  padding-left: 0;
+  margin: 0;
+}
+
+/* Legacy .gallery may use inline width hints; prefer 3-4 cols on larger screens */
+@media (min-width: 640px) {
+  .prose .gallery {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (min-width: 768px) {
+  .prose .gallery {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@media (min-width: 1024px) {
+  .prose .gallery {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+/* Gallery items normalize */
+.prose .wp-block-gallery figure,
+.prose .blocks-gallery-item,
+.prose .gallery-item,
+.prose .gallery .gallery-item {
+  margin: 0;
+}
+
+/* Prevent WP inline widths from shrinking items */
+.prose .blocks-gallery-item,
+.prose .gallery .gallery-item {
+  width: 100% !important;
+  max-width: none !important;
+}
+.prose .blocks-gallery-item > figure,
+.prose .gallery .gallery-item > figure {
+  width: 100% !important;
+}
+
+.prose .wp-block-gallery img,
+.prose .blocks-gallery-item img,
+.prose .gallery-item img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover;
+  display: block;
+  border-radius: 0.5rem; /* match rounded-lg */
+}
+
+/* Enforce a consistent aspect ratio for gallery items */
+.prose .wp-block-gallery .blocks-gallery-item,
+.prose .blocks-gallery-grid .blocks-gallery-item,
+.prose .gallery .gallery-item {
+  aspect-ratio: 1 / 1; /* square tiles */
+}
+
+/* Ensure wrappers fill the item height */
+.prose .blocks-gallery-item > figure,
+.prose .gallery .gallery-item > figure,
+.prose .gallery .gallery-item > a,
+.prose .gallery .gallery-item > * {
+  height: 100%;
+}
+
+/* Anchors should be block-level to fill the tile */
+.prose .wp-block-gallery a,
+.prose .blocks-gallery-item a,
+.prose .gallery .gallery-item a {
+  display: block;
+  height: 100%;
+}
+
+/* Optional: captions */
+.prose .wp-element-caption,
+.prose .gallery-caption {
+  @apply text-sm text-slate-600 mt-1;
+}
+
+/* Ensure block images inside content don't overflow and have consistent rounding */
+.prose :where(img) {
+  border-radius: 0.5rem;
+}
+
+/* Default: inline images in post content are smaller and centered */
+.prose .wp-content img {
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+  width: 100%;
+  max-width: 680px; /* smaller on page; zoom on click via lightbox */
+  height: auto;
+  cursor: zoom-in;
+}
+
+/* ========================= */
+/* Video embeds (WordPress)  */
+/* ========================= */
+/* Make videos fill the paragraph width and be responsive */
+.prose figure.wp-block-embed.is-type-video,
+.prose .wp-block-video {
+  margin-top: 1.25rem;
+  margin-bottom: 1.25rem;
+}
+
+.prose figure.wp-block-embed .wp-block-embed__wrapper,
+.prose .wp-block-video {
+  position: relative;
+}
+
+.prose figure.wp-block-embed .wp-block-embed__wrapper::before,
+.prose .wp-block-video::before {
+  content: "";
+  display: block;
+  padding-top: 56.25%; /* 16:9 */
+}
+
+.prose figure.wp-block-embed .wp-block-embed__wrapper > iframe,
+.prose .wp-block-video > video {
+  position: absolute;
+  inset: 0;
+}
+
+.prose figure.wp-block-embed.is-type-video .wp-block-embed__wrapper > iframe,
+.prose .wp-content iframe[src*="youtube"],
+.prose .wp-content iframe[src*="vimeo"],
+.prose .wp-content iframe[src*="player.vimeo"],
+.prose .wp-content iframe[src*="dailymotion"],
+.prose .wp-content video {
+  width: 100% !important;
+  max-width: none !important;
+  aspect-ratio: 16 / 9;
+  height: auto !important;
+  display: block;
+  border-radius: 0.5rem;
+}
+
+/* Caption box below video (uses Gutenberg figcaption) */
+.prose figure.wp-block-embed figcaption,
+.prose .wp-block-video figcaption {
+  @apply text-sm text-slate-700 bg-slate-100 border border-slate-200 rounded-md p-3 mt-2;
+}
+
+/* Respect Gutenberg columns-X classes */
+.prose .wp-block-gallery.columns-1 { grid-template-columns: repeat(1, minmax(0, 1fr)); }
+.prose .wp-block-gallery.columns-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.prose .wp-block-gallery.columns-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.prose .wp-block-gallery.columns-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.prose .wp-block-gallery.columns-5 { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+.prose .wp-block-gallery.columns-6 { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+
+/* Prefer large, uniform tiles for legacy .gallery as well */
+.prose .gallery {
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+}
