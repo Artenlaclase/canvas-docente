@@ -2,6 +2,7 @@
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import Header from "../../components/Header.astro";
 import BlogCard from "../../components/BlogCard.astro";
+import FeaturedBlogCard from "../../components/FeaturedBlogCard.astro";
 import BlogPagination from "../../components/BlogPagination.astro";
 import { getCollection } from 'astro:content';
 import { getWpBase, listWpPostsPage } from "../../utils/wp";
@@ -32,8 +33,15 @@ if (!posts.length) {
 <BaseLayout title="Blog | Canvas Docente">
   <Fragment slot="header"><Header /></Fragment>
   <h1 class="text-2xl font-semibold mb-6">Blog</h1>
-  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-    {posts.map((post) => <BlogCard post={post} />)}
-  </div>
+  {posts.length > 0 ? (
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div class="lg:col-span-2">
+        <FeaturedBlogCard post={posts[0]} />
+      </div>
+      <div class="lg:col-span-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-6">
+        {posts.slice(1).map((post) => <BlogCard post={post} />)}
+      </div>
+    </div>
+  ) : null}
   <BlogPagination current={current} totalPages={totalPages} base="/blog" />
 </BaseLayout>
