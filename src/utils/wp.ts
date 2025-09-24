@@ -22,6 +22,7 @@ export type NormalizedPost = {
     date: string;
     cover?: string;
     author?: string;
+    categories?: Array<{ id?: number; name: string; slug?: string }>;
   };
   contentHtml?: string;
 };
@@ -265,6 +266,15 @@ function getAuthorName(raw: WpRawPost): string | undefined {
   return typeof name === 'string' ? name : undefined;
 }
 
+function getCategories(raw: WpRawPost): Array<{ id?: number; name: string; slug?: string }> | undefined {
+  const terms = raw._embedded?.['wp:term'] as any[] | undefined;
+  if (!terms || !Array.isArray(terms)) return undefined;
+  const flat = terms.flat().filter(Boolean);
+  const cats = flat.filter((t: any) => t?.taxonomy === 'category');
+  const mapped = cats.map((c: any) => ({ id: c?.id, name: String(c?.name || ''), slug: c?.slug }));
+  return mapped.length ? mapped : undefined;
+}
+
 export function normalizePost(raw: WpRawPost): NormalizedPost {
   const title = raw.title?.rendered ?? '';
   const excerpt = raw.excerpt?.rendered ?? '';
@@ -287,6 +297,7 @@ export function normalizePost(raw: WpRawPost): NormalizedPost {
       date: raw.date,
       cover: normalizeImageUrl(coverRaw, siteRoot, mediaRoot),
       author: getAuthorName(raw),
+      categories: getCategories(raw),
     },
     contentHtml,
   };

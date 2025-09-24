@@ -9,6 +9,59 @@ import mosaico from "../assets/images/mosaico.jpg";
 import volumen from "../assets/images/volumen.jpg";
 import mascara from "../assets/images/mascara.jpg";
 import ContactForm from "../components/ContactForm.astro";
+import BlogCard from "../components/BlogCard.astro";
+import { getCollection } from 'astro:content';
+import { getWpBase, listWpPosts } from "../utils/wp";
+// Fetch a small pool of posts to pick random per category
+let pool: any[] = [];
+const wpBase = getWpBase();
+if (wpBase) {
+	try {
+		pool = await listWpPosts(30);
+	} catch {}
+}
+if (!pool.length) {
+	const locals = await getCollection('blog');
+	// map to a shape compatible with BlogCard props when local
+	pool = locals
+		.sort((a,b) => +new Date(b.data.date) - +new Date(a.data.date))
+		.slice(0, 30);
+}
+
+function pickRandom<T>(arr: T[], n: number): T[] {
+	const a = [...arr];
+	for (let i = a.length - 1; i > 0; i--) {
+		const j = Math.floor(Math.random() * (i + 1));
+		[a[i], a[j]] = [a[j], a[i]];
+	}
+	return a.slice(0, n);
+}
+
+// Build a simple category index from WP posts; for local posts, we don't have categories so just pick random
+let columns: any[] = [];
+if (pool.length && typeof pool[0]?.id === 'number') {
+	const catMap = new Map<string, any[]>();
+	for (const p of pool) {
+		const cats = p.data?.categories || [];
+		for (const c of cats) {
+			const key = c?.name || c?.slug || String(c?.id || '');
+			if (!key) continue;
+			if (!catMap.has(key)) catMap.set(key, []);
+			catMap.get(key)!.push(p);
+		}
+	}
+	const allCats = Array.from(catMap.keys());
+	const chosenCats = pickRandom(allCats, Math.min(3, allCats.length));
+	columns = chosenCats.map((key) => {
+		const arr = catMap.get(key) || [];
+		const [post] = pickRandom(arr, 1);
+		return { title: key, post };
+	}).filter(x => x && x.post);
+}
+if (columns.length < 3) {
+	const rest = pickRandom(pool, 3 - columns.length);
+	columns = columns.concat(rest.map((p) => ({ title: 'Blog', post: p })));
+}
 ---
 
 <BaseLayout title="Canvas Docente" description="20 años de artes visuales en aula">
@@ -44,6 +97,21 @@ import ContactForm from "../components/ContactForm.astro";
 			))}
 		</div>
 	</section>
+
+	<!-- 3 columnas de blog por categoría (al azar) -->
+	{columns.length ? (
+		<section class="pt-6">
+			<h2 class="text-xl font-semibold mb-4">Del blog</h2>
+			<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+				{columns.slice(0,3).map(({ title, post }) => (
+					<div class="space-y-2">
+						<h3 class="text-sm uppercase tracking-wide text-slate-500">{title}</h3>
+						<BlogCard post={post} />
+					</div>
+				))}
+			</div>
+		</section>
+	) : null}
 
 	<!-- Contact form far below the fold -->
 	<div class="mt-[120vh] sm:mt-[90vh] lg:mt-[70vh]">
