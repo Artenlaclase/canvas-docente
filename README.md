@@ -188,3 +188,35 @@ Ejemplo `.env`:
 # Sitio WP en subcarpeta
 WP_API_BASE=https://artenlaclase.cl/blog/?rest_route=/wp/v2
 ```
+
+### Despliegue en cPanel (Node.js App)
+
+Este proyecto está configurado con SSR (output: 'server') y adaptador Node. No genera `index.html` estáticos; en su lugar genera un servidor Node dentro de `dist/`.
+
+Pasos:
+
+1) Construye el proyecto:
+
+```powershell
+npm ci
+npm run build
+```
+
+2) Sube a cPanel (Administrador de archivos o FTP/SFTP) estos elementos a la carpeta de tu app (por ejemplo `~/app`):
+- La carpeta `dist/` completa
+- El archivo `server.js` (archivo de arranque que importa `dist/server/entry.mjs`)
+- `package.json` y `package-lock.json` (opcional pero recomendado si instalarás en el servidor)
+- `.env` con tus variables (si aplica)
+
+3) En cPanel > Setup Node.js App:
+- App Root: la carpeta donde subiste (p. ej. `/home/usuario/app`)
+- Application startup file: `server.js`
+- Node.js version: 18 o superior
+- Variables de entorno: define `PORT` si cPanel te da uno específico; y tus `WP_API_BASE`, etc.
+- Ejecuta “Run NPM Install” si necesitas instalar dependencias (normalmente no hace falta si solo sirves `dist/`).
+
+4) Inicia/Restart la app. Accede por tu dominio (cPanel hace proxy al puerto `PORT`).
+
+Notas:
+- Si tu hosting no soporta Node.js Apps, necesitarías un server con Node, o convertir a `output: 'static'` (perderías SSR/búsqueda en vivo).
+- Para puerto distinto en local: `set PORT=4322 && npm run start` (Windows PowerShell: `$env:PORT=4322; npm run start`).
