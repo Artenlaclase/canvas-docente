@@ -40,7 +40,7 @@ const isWpPost = typeof post.id === 'number';
 const fallbackHtmlImg = !coverPath && !isWpPost ? firstImageFromHtml(post.contentHtml) : undefined;
 const displayCover = isWpPost ? (coverPath || undefined) : (resolved || coverPath || fallbackHtmlImg);
 ---
-<a href={`/blog/${post.slug}`} class="group block rounded-xl overflow-hidden border border-slate-200 hover:shadow-lg transition bg-white">
+<a href={`/blog/${encodeURIComponent(post.slug)}`} class="group block rounded-xl overflow-hidden border border-slate-200 hover:shadow-lg transition bg-white">
   {displayCover ? (
     <img src={displayCover} alt={post.data.title || 'Imagen del artículo'} loading="lazy" class="aspect-[16/9] w-full object-cover group-hover:scale-[1.01] transition" />
   ) : null}

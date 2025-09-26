@@ -40,6 +40,19 @@ function ensureApiBase(raw?: string): string | undefined {
   return base;
 }
 
+function getWpLang(): string | undefined {
+  // Optional language code for Polylang/WPML setups (e.g., 'es')
+  // eslint-disable-next-line no-undef
+  const pe: any = (typeof process !== 'undefined' && (process as any)?.env) ? (process as any).env : {};
+  let lang: string | undefined = pe.WP_API_LANG || pe.PUBLIC_WP_API_LANG;
+  if (!lang) {
+    // eslint-disable-next-line no-undef
+    const envAny: any = (typeof import.meta !== 'undefined' && (import.meta as any)?.env) ? (import.meta as any).env : {};
+    lang = envAny.WP_API_LANG || envAny.PUBLIC_WP_API_LANG;
+  }
+  return (lang && String(lang).trim()) || undefined;
+}
+
 export function getWpBase(): string | undefined {
   // Prefer WP_API_BASE, fallback to PUBLIC_WP_API_BASE for flexibility
   // eslint-disable-next-line no-undef
@@ -322,9 +335,11 @@ export function normalizePost(raw: WpRawPost): NormalizedPost {
 export async function listWpPosts(limit = 100): Promise<NormalizedPost[]> {
   const base = getWpBase();
   if (!base) return [];
+  const lang = getWpLang();
+  const langPart = lang ? `&lang=${encodeURIComponent(lang)}` : '';
   const url = base.includes('rest_route=')
-    ? `${base}/posts&status=publish&_embed=1&per_page=${Math.min(limit, 100)}`
-    : `${base}/posts?status=publish&_embed=1&per_page=${Math.min(limit, 100)}`;
+    ? `${base}/posts&status=publish&_embed=1&per_page=${Math.min(limit, 100)}${langPart}`
+    : `${base}/posts?status=publish&_embed=1&per_page=${Math.min(limit, 100)}${langPart}`;
   const items = await fetchJson<WpRawPost[]>(url);
   return items.map(normalizePost);
 }
@@ -332,10 +347,12 @@ export async function listWpPosts(limit = 100): Promise<NormalizedPost[]> {
 export async function listWpPostsPage(page = 1, perPage = 9, opts?: { search?: string }): Promise<{ posts: NormalizedPost[]; total: number; totalPages: number }>{
   const base = getWpBase();
   if (!base) return { posts: [], total: 0, totalPages: 0 };
+  const lang = getWpLang();
   const searchPart = opts?.search ? `&search=${encodeURIComponent(opts.search)}` : '';
+  const langPart = lang ? `&lang=${encodeURIComponent(lang)}` : '';
   const url = base.includes('rest_route=')
-    ? `${base}/posts&status=publish&_embed=1&per_page=${Math.min(perPage, 100)}&page=${Math.max(1, page)}${searchPart}`
-    : `${base}/posts?status=publish&_embed=1&per_page=${Math.min(perPage, 100)}&page=${Math.max(1, page)}${searchPart}`;
+    ? `${base}/posts&status=publish&_embed=1&per_page=${Math.min(perPage, 100)}&page=${Math.max(1, page)}${searchPart}${langPart}`
+    : `${base}/posts?status=publish&_embed=1&per_page=${Math.min(perPage, 100)}&page=${Math.max(1, page)}${searchPart}${langPart}`;
   const { data, headers } = await fetchJsonWithHeaders<WpRawPost[]>(url);
   const total = Number(headers.get('X-WP-Total') || headers.get('x-wp-total') || data.length || 0);
   const totalPages = Number(headers.get('X-WP-TotalPages') || headers.get('x-wp-totalpages') || (total ? Math.ceil(total / perPage) : 0));
@@ -345,10 +362,24 @@ export async function listWpPostsPage(page = 1, perPage = 9, opts?: { search?: s
 export async function getWpPostBySlug(slug: string): Promise<NormalizedPost | undefined> {
   const base = getWpBase();
   if (!base) return undefined;
+  const lang = getWpLang();
+  // 1) Intento directo por slug (con status=publish para evitar borradores)
+  const langPart = lang ? `&lang=${encodeURIComponent(lang)}` : '';
   const url = base.includes('rest_route=')
-    ? `${base}/posts&slug=${encodeURIComponent(slug)}&_embed=1`
-    : `${base}/posts?slug=${encodeURIComponent(slug)}&_embed=1`;
+    ? `${base}/posts&status=publish&slug=${encodeURIComponent(slug)}&_embed=1${langPart}`
+    : `${base}/posts?status=publish&slug=${encodeURIComponent(slug)}&_embed=1${langPart}`;
   const items = await fetchJson<WpRawPost[]>(url);
-  const first = items?.[0];
-  return first ? normalizePost(first) : undefined;
+  let first = items?.[0];
+  if (first) return normalizePost(first);
+  // 2) Fallback: buscar por texto si no se encontró por slug (algunos sitios alteran slugs)
+  const searchUrl = base.includes('rest_route=')
+    ? `${base}/posts&status=publish&search=${encodeURIComponent(slug)}&_embed=1&per_page=1${langPart}`
+    : `${base}/posts?status=publish&search=${encodeURIComponent(slug)}&_embed=1&per_page=1${langPart}`;
+  try {
+    const sItems = await fetchJson<WpRawPost[]>(searchUrl);
+    first = sItems?.[0];
+    return first ? normalizePost(first) : undefined;
+  } catch {
+    return undefined;
+  }
 }
