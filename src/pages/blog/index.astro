@@ -4,7 +4,6 @@ import Header from "../../components/Header.astro";
 import BlogCard from "../../components/BlogCard.astro";
 import FeaturedBlogCard from "../../components/FeaturedBlogCard.astro";
 import BlogPagination from "../../components/BlogPagination.astro";
-import { getCollection } from 'astro:content';
 import { getWpBase, listWpPostsPage } from "../../utils/wp";
 export const prerender = false;
 
@@ -14,36 +13,20 @@ const PER_PAGE = 9;
 // Read query param for server-side search
 const q = (Astro.url.searchParams.get('q') || '').trim();
 
-// Try WordPress first if configured via env; otherwise use local content collection
+// WordPress-only: no local fallback
 let posts: any[] = [];
 let totalPages = 1;
 const current = 1;
 const wpBase = getWpBase();
-if (wpBase) {
+if (!wpBase) {
+  console.warn('[Blog] WP_API_BASE no configurado. Configure la variable en el servidor.');
+} else {
   try {
     const { posts: wpPosts, totalPages: tp } = await listWpPostsPage(1, PER_PAGE, q ? { search: q } : undefined);
     posts = wpPosts;
     totalPages = tp || 1;
   } catch (err) {
-    console.warn('[Blog] WP fetch failed, falling back to local collection:', err);
-  }
-}
-if (!posts.length) {
-  const locals = (await getCollection('blog')).sort((a,b) => +new Date(b.data.date) - +new Date(a.data.date));
-  if (q) {
-    const qq = q.toLowerCase();
-    const filtered = locals.filter((p) => {
-      const title = String(p.data.title || '').toLowerCase();
-      const d: any = p.data || {};
-      const cats = (d['categories'] ?? d['category'] ?? d['tags'] ?? d['tag'] ?? []);
-      const catsStr = (Array.isArray(cats) ? cats : [cats]).map((c: any) => typeof c === 'string' ? c : (c?.name || c?.title || '')).join(' ').toLowerCase();
-      return title.includes(qq) || catsStr.includes(qq);
-    });
-    totalPages = Math.max(1, Math.ceil(filtered.length / PER_PAGE));
-    posts = filtered.slice(0, PER_PAGE);
-  } else {
-    totalPages = Math.max(1, Math.ceil(locals.length / PER_PAGE));
-    posts = locals.slice(0, PER_PAGE);
+    console.error('[Blog] Error consultando WordPress:', err);
   }
 }
 
@@ -96,7 +79,12 @@ const getCats = (post: any) => {
         </div>
       </aside>
     </div>
-  ) : null}
+  ) : (
+    <div class="text-center text-slate-600 my-16">
+      <p class="mb-2">No hay entradas disponibles.</p>
+      <p class="text-sm">Verifique la conexión con WordPress o intente más tarde.</p>
+    </div>
+  )}
   <style is:inline>
     .hidden-by-search { display: none !important; }
   </style>

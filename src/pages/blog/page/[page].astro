@@ -3,7 +3,6 @@ import BaseLayout from "../../../layouts/BaseLayout.astro";
 import Header from "../../../components/Header.astro";
 import BlogCard from "../../../components/BlogCard.astro";
 import BlogPagination from "../../../components/BlogPagination.astro";
-import { getCollection } from 'astro:content';
 import { getWpBase, listWpPostsPage } from "../../../utils/wp";
 
 export const prerender = true;
@@ -22,21 +21,8 @@ export async function getStaticPaths() {
           paths.push({ params: { page: String(p) }, props: { pageNum: p, totalPages } });
         }
       }
-      // Even if totalPages <=1 in WP, we might still have local content pages. We'll add those below.
     } catch (e) {
-      console.warn('[Blog pagination] WP fetch failed, falling back to local pages:', e);
-    }
-  }
-
-  // Local content pagination (fallback or additional if WP had <=1 page)
-  const locals = await getCollection('blog');
-  const totalLocalPages = Math.ceil(locals.length / PER_PAGE);
-  if (totalLocalPages > 1) {
-    for (let p = 2; p <= totalLocalPages; p++) {
-      // Avoid duplicating paths if already present for same page number
-      if (!paths.find((x) => x.params.page === String(p))) {
-        paths.push({ params: { page: String(p) }, props: { pageNum: p, totalPages: totalLocalPages } });
-      }
+      console.error('[Blog pagination] Error consultando WordPress:', e);
     }
   }
 
@@ -52,34 +38,16 @@ let totalPages = 1;
 let posts: any[] = [];
 
 const wpBase = getWpBase();
-if (wpBase) {
+if (!wpBase) {
+  console.warn('[Blog] WP_API_BASE no configurado. Configure la variable en el servidor.');
+} else {
   try {
     const { posts: wpPosts, totalPages: tp } = await listWpPostsPage(pageNum, PER_PAGE, q ? { search: q } : undefined);
-    if (wpPosts.length) {
-      posts = wpPosts;
-      totalPages = tp || 1;
-    }
+    posts = wpPosts;
+    totalPages = tp || 1;
   } catch (e) {
-    console.warn('[Blog] WP page fetch failed, trying local collection:', e);
+    console.error('[Blog] Error consultando WordPress:', e);
   }
-}
-
-if (!posts.length) {
-  const localsAll = (await getCollection('blog')).sort((a,b) => +new Date(b.data.date) - +new Date(a.data.date));
-  let locals = localsAll;
-  if (q) {
-    const qq = q.toLowerCase();
-    locals = localsAll.filter((p) => {
-      const title = String(p.data.title || '').toLowerCase();
-      const d: any = p.data || {};
-      const cats = (d['categories'] ?? d['category'] ?? d['tags'] ?? d['tag'] ?? []);
-      const catsStr = (Array.isArray(cats) ? cats : [cats]).map((c: any) => typeof c === 'string' ? c : (c?.name || c?.title || '')).join(' ').toLowerCase();
-      return title.includes(qq) || catsStr.includes(qq);
-    });
-  }
-  totalPages = Math.max(1, Math.ceil(locals.length / PER_PAGE));
-  const start = (pageNum - 1) * PER_PAGE;
-  posts = locals.slice(start, start + PER_PAGE);
 }
 ---
 <BaseLayout title={`Blog - Página ${current}${q ? ` - "${q}"` : ''} | Canvas Docente`}>
@@ -92,9 +60,16 @@ if (!posts.length) {
       <svg class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
     </div>
   </div>
-  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-    {posts.map((post) => <BlogCard post={post} />)}
-  </div>
+  {posts.length ? (
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      {posts.map((post) => <BlogCard post={post} />)}
+    </div>
+  ) : (
+    <div class="text-center text-slate-600 my-16">
+      <p class="mb-2">No hay entradas disponibles.</p>
+      <p class="text-sm">Verifique la conexión con WordPress o intente más tarde.</p>
+    </div>
+  )}
   <BlogPagination current={current} totalPages={totalPages} base={`/blog${q ? `?q=${encodeURIComponent(q)}` : ''}`} />
   <script>
     // @ts-nocheck
