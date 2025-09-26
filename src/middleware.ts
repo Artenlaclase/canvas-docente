@@ -7,8 +7,19 @@ export async function onRequest(context: APIContext, next: MiddlewareNext) {
     const url = new URL(req.url);
     const pathname = url.pathname;
 
+    // Skip static assets and internal astro chunks
+    if (
+      pathname.startsWith('/_astro/') ||
+      pathname.startsWith('/assets/') ||
+      pathname.startsWith('/favicon.') ||
+      pathname.startsWith('/api/')
+    ) {
+      return next();
+    }
+
     // Only act on blog pages
-    if (pathname.startsWith('/blog/')) {
+  // If mounted at root, blog still starts with /blog/
+  if (pathname.startsWith('/blog/')) {
       // Support common WP query params
       const idParam = url.searchParams.get('id') || url.searchParams.get('p') || url.searchParams.get('page_id');
       const id = idParam && /^\d+$/.test(idParam) ? Number(idParam) : undefined;
