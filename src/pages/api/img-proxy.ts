@@ -1,14 +1,15 @@
 import type { APIRoute } from 'astro';
+import { createHmac } from 'node:crypto';
 
-// Image proxy con mejoras de caché y validaciones:
+// Image proxy con mejoras de caché y seguridad:
 // - Activación vía PUBLIC_IMAGE_PROXY=on|true|1
 // - Restricción opcional por hosts PUBLIC_IMAGE_PROXY_ALLOW (coma o pipe)
-// - Soporta ETag / Last-Modified y responde 304 si el upstream devuelve 304
-// - Cabeceras de caché largas (1 día) + stale-while-revalidate para navegadores/CDN
-// - Límite de tamaño (por defecto 10MB) para evitar abuso
+// - Firma HMAC opcional (set IMAGE_PROXY_SECRET y añade &sig=<hex>)
+// - Rate limiting en memoria (IMAGE_PROXY_RATE, IMAGE_PROXY_WINDOW_MS)
 // - Solo métodos GET/HEAD
-// - Validación de protocolo (http/https)
-// - Rechaza parámetros con url anidada para evitar SSRF encadenado
+// - Validación de protocolo (http/https) y bloqueo de url anidada
+// - Límite de tamaño (10MB) y verificación de Content-Type image/*
+// - Cache-Control largo + soporte ETag / Last-Modified / 304
 
 const MAX_BYTES = 10 * 1024 * 1024; // 10MB
 const ONE_DAY = 86400; // seg
@@ -62,6 +63,22 @@ async function handle(request: Request, headOnly = false): Promise<Response> {
     return new Response('Protocol not allowed', { status: 400 });
   }
 
+  // Firma HMAC opcional para evitar uso como open-proxy
+  // Server-only secret: IMAGE_PROXY_SECRET (no PUBLIC_)
+  // Firma = hex(hmacSHA256(secret, targetURL))
+  // Enviar como parámetro &sig=<hex>
+  const secret = (typeof process !== 'undefined' && process.env?.IMAGE_PROXY_SECRET) || '';
+  if (secret) {
+    const sig = searchParams.get('sig');
+    if (!sig) return new Response('Missing signature', { status: 403 });
+    try {
+      const expected = createHmac('sha256', secret).update(target).digest('hex');
+      if (sig.toLowerCase() !== expected) return new Response('Invalid signature', { status: 403 });
+    } catch {
+      return new Response('Signature check error', { status: 500 });
+    }
+  }
+
   const allowList = (envAny.PUBLIC_IMAGE_PROXY_ALLOW || envAny.IMAGE_PROXY_ALLOW || '').toString();
   if (!isAllowed(url, allowList)) {
     if (import.meta.env.DEV) console.warn('[img-proxy] 403: host not allowed', { host: url.host, allowList });
@@ -80,7 +97,11 @@ async function handle(request: Request, headOnly = false): Promise<Response> {
     const ifModifiedSince = request.headers.get('if-modified-since');
     if (ifModifiedSince) forwardHeaders['If-Modified-Since'] = ifModifiedSince;
 
-    const upstream = await fetch(url.toString(), { method: 'GET', headers: forwardHeaders });
+  // Rate limiting simple en memoria (por IP extraída de X-Forwarded-For / fallback 'unknown')
+  const ip = (request.headers.get('x-forwarded-for') || '').split(',')[0].trim() || request.headers.get('cf-connecting-ip') || 'unknown';
+  rateLimit(ip);
+
+  const upstream = await fetch(url.toString(), { method: 'GET', headers: forwardHeaders });
 
     if (upstream.status === 304) {
       // Propagar 304 con cabeceras relevantes
@@ -103,8 +124,13 @@ async function handle(request: Request, headOnly = false): Promise<Response> {
       return new Response('File too large', { status: 413 });
     }
 
+    const upstreamCT = upstream.headers.get('content-type') || '';
+    if (!/^image\//i.test(upstreamCT)) {
+      return new Response('Unsupported content-type', { status: 415 });
+    }
+
     const headers = new Headers();
-    headers.set('Content-Type', upstream.headers.get('content-type') || 'application/octet-stream');
+    headers.set('Content-Type', upstreamCT || 'application/octet-stream');
     const etag = upstream.headers.get('etag'); if (etag) headers.set('ETag', etag);
     const lastMod = upstream.headers.get('last-modified'); if (lastMod) headers.set('Last-Modified', lastMod);
     headers.set('Cache-Control', chooseCacheControl(url));
@@ -114,6 +140,26 @@ async function handle(request: Request, headOnly = false): Promise<Response> {
   } catch (e: any) {
     if (import.meta.env.DEV) console.error('[img-proxy] error', e?.message || e);
     return new Response('Proxy error: ' + (e?.message || 'unknown'), { status: 500 });
+  }
+}
+
+// --- Rate limiting (in-memory) -------------------------------------------------
+type Bucket = { count: number; reset: number };
+const buckets: Map<string, Bucket> = new Map();
+function rateLimit(ip: string) {
+  const limit = parseInt((typeof process !== 'undefined' && process.env.IMAGE_PROXY_RATE) || '120', 10); // req
+  const windowMs = parseInt((typeof process !== 'undefined' && process.env.IMAGE_PROXY_WINDOW_MS) || '300000', 10); // 5 min
+  if (limit <= 0) return; // disabled
+  const now = Date.now();
+  let b = buckets.get(ip);
+  if (!b || now > b.reset) {
+    b = { count: 0, reset: now + windowMs };
+    buckets.set(ip, b);
+  }
+  b.count++;
+  if (b.count > limit) {
+    const retrySec = Math.ceil((b.reset - now) / 1000);
+    throw new Response('Rate limit exceeded', { status: 429, headers: { 'Retry-After': String(retrySec) } });
   }
 }
 

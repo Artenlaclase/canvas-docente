@@ -102,15 +102,27 @@ function resolveCoverPath(path: string | undefined): string | undefined {
         let width: string | undefined; let height: string | undefined;
         const sizeMatch = finalCover.match(/-([0-9]{2,5})x([0-9]{2,5})(\.[a-z]{2,5})(?:$|[?&#])/i);
         if (sizeMatch) { width = sizeMatch[1]; height = sizeMatch[2]; }
+        // Construir srcset a partir de candidateCovers (ordenadas de mayor a menor en normalize)
+        const candidates: string[] = (wpPost!.data.candidateCovers || []).slice().reverse(); // pequeño->grande para navegador
+        // Inferir width del patrón -WxH; si no se detecta, no se añade descriptor
+        const entries = candidates.map(u => {
+          const m = u.match(/-([0-9]{2,5})x([0-9]{2,5})(\.[a-z]{2,5})(?:$|[?&#])/i);
+          if (m) return `${u} ${m[1]}w`;
+          return u; // fallback sin descriptor
+        });
+        const srcset = entries.length ? entries.join(', ') : undefined;
+        const sizes = srcset ? '(max-width: 640px) 100vw, (max-width: 1024px) 90vw, 1024px' : undefined;
         const baseProps = {
           id: 'post-cover',
           src: finalCover,
           loading: 'lazy',
           decoding: 'async',
-          class: 'w-full aspect-[16/9] object-cover rounded-lg',
+            class: 'w-full aspect-[16/9] object-cover rounded-lg',
           'data-candidates': JSON.stringify(wpPost!.data.candidateCovers || []),
           width,
           height,
+          srcset,
+          sizes,
         } as any;
         return cover ? (
           <img {...baseProps} alt={wpPost!.data.title} />

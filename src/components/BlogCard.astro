@@ -3,7 +3,14 @@ const { post } = Astro.props as { post: any };
 // Intentar resolver assets locales bajo src/assets/images
 const assets = import.meta.glob('../assets/images/**/*', { eager: true, import: 'default' }) as Record<string, any>;
 const coverPath = post.data.cover as string | undefined;
-const isLocal = !!coverPath && (/^(\/|\.\/|\.\.\/)/.test(coverPath) || coverPath.startsWith('/src/'));
+// Consideramos "local" solo si apunta claramente a un asset del proyecto, no si es un proxy o placeholder.
+const isProxy = !!coverPath && coverPath.startsWith('/api/img-proxy');
+const isPlaceholder = coverPath === '/placeholder-cover.svg';
+const isLocal = !!coverPath && !isProxy && !isPlaceholder && (
+  coverPath.startsWith('/src/') ||
+  /^(\.\/|\.\.\/)/.test(coverPath) ||
+  /\/assets\/images\//.test(coverPath)
+);
 
 function resolveCover(path?: string): string | undefined {
   if (!path) return undefined;
@@ -38,6 +45,7 @@ const resolved = resolveCover(coverPath);
 if (import.meta.env.DEV && coverPath && isLocal && !resolved) {
   console.warn(`[BlogCard] No se pudo resolver la portada local: ${coverPath}. Asegúrate de que exista en src/assets/images y usa una ruta relativa, por ejemplo ../../assets/images/...`);
 }
+// Evitar warning para URLs proxificadas que comienzan por /api/img-proxy (no son assets locales)
 
 // WP posts (normalized) have numeric id; local content does not
 const isWpPost = typeof post.id === 'number';
@@ -51,9 +59,34 @@ if (!displayCover) {
 }
 ---
 <a href={`/blog/${encodeURIComponent(post.slug)}${post.id ? `?id=${encodeURIComponent(post.id)}` : ''}`} class="group block rounded-lg overflow-hidden border border-slate-200 hover:shadow-md transition">
-  {displayCover ? (
-    <img src={displayCover} alt={post.data.title || 'Imagen del artículo'} loading="lazy" class="aspect-[16/9] w-full object-cover group-hover:scale-[1.02] transition" />
-  ) : null}
+  {displayCover ? (() => {
+    // Si el post trae candidateCovers usamos srcset responsivo
+    const candidates: string[] = (post.data?.candidateCovers || []).slice().reverse();
+    const entries = candidates.map((u: string) => {
+      const m = u.match(/-([0-9]{2,5})x([0-9]{2,5})(\.[a-z]{2,5})(?:$|[?&#])/i);
+      if (m) return `${u} ${m[1]}w`;
+      return u;
+    });
+    const srcset = entries.length ? entries.join(', ') : undefined;
+    const sizes = srcset ? '(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 480px' : undefined;
+    // Derivar width/height base del displayCover si tiene patrón
+    let width: string | undefined; let height: string | undefined;
+    const sizeMatch = String(displayCover).match(/-([0-9]{2,5})x([0-9]{2,5})(\.[a-z]{2,5})(?:$|[?&#])/i);
+    if (sizeMatch) { width = sizeMatch[1]; height = sizeMatch[2]; }
+    return (
+      <img
+        src={displayCover}
+        alt={post.data.title || 'Imagen del artículo'}
+        loading="lazy"
+        decoding="async"
+        srcset={srcset}
+        sizes={sizes}
+        width={width}
+        height={height}
+        class="aspect-[16/9] w-full object-cover group-hover:scale-[1.02] transition"
+      />
+    );
+  })() : null}
   <div class="p-4">
     <h3 class="font-semibold">{post.data.title}</h3>
     <p class="text-sm text-slate-600 mt-1 line-clamp-2">{post.data.excerpt}</p>

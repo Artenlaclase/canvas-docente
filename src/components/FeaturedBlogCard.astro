@@ -3,7 +3,13 @@ const { post } = Astro.props as { post: any };
 // Resolver portada como en BlogCard
 const assets = import.meta.glob('../assets/images/**/*', { eager: true, import: 'default' }) as Record<string, any>;
 const coverPath = post.data.cover as string | undefined;
-const isLocal = !!coverPath && (/^(\/|\.\/|\.\.\/)/.test(coverPath) || coverPath.startsWith('/src/'));
+const isProxy = !!coverPath && coverPath.startsWith('/api/img-proxy');
+const isPlaceholder = coverPath === '/placeholder-cover.svg';
+const isLocal = !!coverPath && !isProxy && !isPlaceholder && (
+  coverPath.startsWith('/src/') ||
+  /^(\.\/|\.\.\/)/.test(coverPath) ||
+  /\/assets\/images\//.test(coverPath)
+);
 
 function resolveCover(path?: string): string | undefined {
   if (!path) return undefined;
@@ -38,12 +44,35 @@ if (import.meta.env.DEV && coverPath && isLocal && !resolved) {
 
 const isWpPost = typeof post.id === 'number';
 const fallbackHtmlImg = !coverPath && !isWpPost ? firstImageFromHtml(post.contentHtml) : undefined;
-const displayCover = isWpPost ? (coverPath || undefined) : (resolved || coverPath || fallbackHtmlImg);
+let displayCover = isWpPost ? (coverPath || undefined) : (resolved || coverPath || fallbackHtmlImg);
+if (!displayCover) displayCover = '/placeholder-cover.svg';
 ---
 <a href={`/blog/${encodeURIComponent(post.slug)}${post.id ? `?id=${encodeURIComponent(post.id)}` : ''}`} class="group block rounded-xl overflow-hidden border border-slate-200 hover:shadow-lg transition bg-white">
-  {displayCover ? (
-    <img src={displayCover} alt={post.data.title || 'Imagen del artículo'} loading="lazy" class="aspect-[16/9] w-full object-cover group-hover:scale-[1.01] transition" />
-  ) : null}
+  {displayCover ? (() => {
+    const candidates: string[] = (post.data?.candidateCovers || []).slice().reverse();
+    const entries = candidates.map((u: string) => {
+      const m = u.match(/-([0-9]{2,5})x([0-9]{2,5})(\.[a-z]{2,5})(?:$|[?&#])/i);
+      if (m) return `${u} ${m[1]}w`; return u;
+    });
+    const srcset = entries.length ? entries.join(', ') : undefined;
+    const sizes = srcset ? '(max-width: 768px) 100vw, (max-width: 1280px) 75vw, 1024px' : undefined;
+    let width: string | undefined; let height: string | undefined;
+    const sizeMatch = String(displayCover).match(/-([0-9]{2,5})x([0-9]{2,5})(\.[a-z]{2,5})(?:$|[?&#])/i);
+    if (sizeMatch) { width = sizeMatch[1]; height = sizeMatch[2]; }
+    return (
+      <img
+        src={displayCover}
+        alt={post.data.title || 'Imagen del artículo'}
+        loading="lazy"
+        decoding="async"
+        srcset={srcset}
+        sizes={sizes}
+        width={width}
+        height={height}
+        class="aspect-[16/9] w-full object-cover group-hover:scale-[1.01] transition"
+      />
+    );
+  })() : null}
   <div class="p-6">
     <h2 class="text-2xl md:text-3xl font-bold leading-tight">{post.data.title}</h2>
     <p class="text-sm text-slate-500 mt-2">
