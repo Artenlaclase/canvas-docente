@@ -238,13 +238,13 @@ function rewriteContentHtml(html: string, siteRoot?: string, mediaRoot?: string)
 }
 
 async function fetchJson<T>(url: string): Promise<T> {
-  const res = await fetch(url, { headers: { Accept: 'application/json' } });
+  const res = await fetch(url, { headers: { Accept: 'application/json', 'User-Agent': 'canvas-docente-astro/1.0 (+https://artenlaclase.cl)' } });
   if (!res.ok) throw new Error(`WP fetch failed ${res.status}: ${url}`);
   return (await res.json()) as T;
 }
 
 async function fetchJsonWithHeaders<T>(url: string): Promise<{ data: T; headers: Headers }>{
-  const res = await fetch(url, { headers: { Accept: 'application/json' } });
+  const res = await fetch(url, { headers: { Accept: 'application/json', 'User-Agent': 'canvas-docente-astro/1.0 (+https://artenlaclase.cl)' } });
   if (!res.ok) throw new Error(`WP fetch failed ${res.status}: ${url}`);
   const data = (await res.json()) as T;
   return { data, headers: res.headers };
@@ -379,6 +379,22 @@ export async function getWpPostBySlug(slug: string): Promise<NormalizedPost | un
     const sItems = await fetchJson<WpRawPost[]>(searchUrl);
     first = sItems?.[0];
     return first ? normalizePost(first) : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+export async function getWpPostById(id: number): Promise<NormalizedPost | undefined> {
+  const base = getWpBase();
+  if (!base) return undefined;
+  const lang = getWpLang();
+  const langPart = lang ? `&lang=${encodeURIComponent(lang)}` : '';
+  const url = base.includes('rest_route=')
+    ? `${base}/posts/${encodeURIComponent(String(id))}?_embed=1${langPart}`
+    : `${base}/posts/${encodeURIComponent(String(id))}?_embed=1${langPart}`;
+  try {
+    const item = await fetchJson<WpRawPost>(url);
+    return item ? normalizePost(item) : undefined;
   } catch {
     return undefined;
   }

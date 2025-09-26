@@ -2,12 +2,13 @@
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import Header from "../../components/Header.astro";
 import { getCollection } from 'astro:content';
-import { getWpBase, getWpPostBySlug, type NormalizedPost } from "../../utils/wp";
+import { getWpBase, getWpPostBySlug, getWpPostById, type NormalizedPost } from "../../utils/wp";
 
 export const prerender = false;
 
 // SSR: resolver el post por slug en cada request para reflejar cambios inmediatos en WordPress
 const { slug } = Astro.params;
+const idParam = Astro.url.searchParams.get('id');
 let wpPost: NormalizedPost | undefined;
 let localPost: any | undefined;
 const wpBase = getWpBase();
@@ -16,6 +17,14 @@ if (wpBase && slug) {
     wpPost = await getWpPostBySlug(slug);
   } catch (e) {
     console.warn('[Blog SSR] Error al obtener post WP por slug:', e);
+  }
+}
+// Fallback: si vino ?id= y no encontramos por slug, intentamos por ID
+if (!wpPost && idParam && /^\d+$/.test(idParam)) {
+  try {
+    wpPost = await getWpPostById(Number(idParam));
+  } catch (e) {
+    console.warn('[Blog SSR] Error al obtener post WP por id:', e);
   }
 }
 if (!wpPost && slug) {
