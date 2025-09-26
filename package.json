@@ -15,7 +15,7 @@
     "astro": "^5.13.7",
     "nodemailer": "^6.9.14"
   },
-    "dotenv": "^16.4.5",
+  "dotenv": "^16.4.5",
   "devDependencies": {
     "@astrojs/check": "^0.9.4",
     "@astrojs/tailwind": "^6.0.2",
