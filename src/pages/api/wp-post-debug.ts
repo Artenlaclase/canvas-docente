@@ -84,7 +84,8 @@ export async function GET({ url }: { url: URL }) {
       id: normalized.id,
       slug: normalized.slug,
       cover: normalized.data.cover,
-      data: normalized.data,
+      candidateCovers: normalized.data.candidateCovers,
+      data: { ...normalized.data, contentHtml: undefined },
       // do not include full contentHtml to keep response smaller; include length
       contentHtmlLength: normalized.contentHtml?.length || 0
     } : undefined,

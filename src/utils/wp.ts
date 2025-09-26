@@ -23,6 +23,7 @@ export type NormalizedPost = {
     cover?: string;
     author?: string;
     categories?: Array<{ id?: number; name: string; slug?: string }>;
+    candidateCovers?: string[]; // ordered list of possible cover image URLs (normalized)
   };
   contentHtml?: string;
 };
@@ -283,6 +284,24 @@ function rewriteContentHtml(html: string, siteRoot?: string, mediaRoot?: string)
     return `${pre}${withParams}${suf}`;
   });
 
+  // Generic fallback: any <img> without src but with a data-* attribute containing an image URL
+  out = out.replace(/<img\b[^>]*>/gi, (tag) => {
+    if (/\ssrc=/.test(tag)) return tag; // already has src
+    // Look for first data-* attribute that looks like an image file or URL
+    const m = tag.match(/data-[a-z0-9_-]+=["']([^"']+\.(?:jpe?g|png|webp|gif))["']/i);
+    if (m && m[1]) {
+      const candidate = norm(m[1]);
+      if (candidate) return tag.replace(/<img/i, `<img src="${candidate}"`);
+    }
+    // Also check for full URL without extension (e.g., imagizer proxies)
+    const m2 = tag.match(/data-[a-z0-9_-]+=["'](https?:[^"']+)["']/i);
+    if (m2 && m2[1]) {
+      const candidate = norm(m2[1]);
+      if (candidate) return tag.replace(/<img/i, `<img src="${candidate}"`);
+    }
+    return tag;
+  });
+
   return out;
 }
 
@@ -364,7 +383,7 @@ function firstImageFromRewrittenHtml(html?: string): string | undefined {
   return undefined;
 }
 
-function getFeaturedImage(raw: WpRawPost): string | undefined {
+function getFeaturedCandidates(raw: WpRawPost): string[] {
   const emb = raw._embedded;
   const mediaArr = emb?.['wp:featuredmedia'] as Array<any> | undefined;
   const media = mediaArr?.[0];
@@ -378,10 +397,15 @@ function getFeaturedImage(raw: WpRawPost): string | undefined {
     const s = sizes[key];
     if (s && typeof s.source_url === 'string') candidates.push({ url: s.source_url, width: s.width });
   }
-  if (candidates.length === 0) return undefined;
-  // Sort by width desc (undefined last) and pick first
+  if (candidates.length === 0) return [];
+  // Sort by width desc (undefined last) and dedupe while preserving order
   candidates.sort((a, b) => (b.width ?? -1) - (a.width ?? -1));
-  return candidates[0].url;
+  const seen = new Set<string>();
+  const ordered: string[] = [];
+  for (const c of candidates) {
+    if (!seen.has(c.url)) { seen.add(c.url); ordered.push(c.url); }
+  }
+  return ordered;
 }
 
 function getAuthorName(raw: WpRawPost): string | undefined {
@@ -407,7 +431,8 @@ export function normalizePost(raw: WpRawPost): NormalizedPost {
   const base = getWpBase();
   const siteRoot = getSiteRootFromBase(base);
   const mediaRoot = getConfiguredMediaRoot();
-  let coverRaw = getFeaturedImage(raw);
+  const featuredCandidates = getFeaturedCandidates(raw);
+  let coverRaw = featuredCandidates[0];
   if (!coverRaw) {
     const firstImg = firstImageFromHtml(content);
     if (firstImg) coverRaw = firstImg;
@@ -422,6 +447,11 @@ export function normalizePost(raw: WpRawPost): NormalizedPost {
   if (coverRaw && /^\/\//.test(coverRaw)) {
     coverRaw = 'https:' + coverRaw;
   }
+  // Normalize candidate list
+  const normCandidates = featuredCandidates
+    .map(u => normalizeImageUrl(u, siteRoot, mediaRoot))
+    .filter(Boolean) as string[];
+
   return {
     id: raw.id,
     slug: raw.slug,
@@ -432,6 +462,7 @@ export function normalizePost(raw: WpRawPost): NormalizedPost {
       cover: normalizeImageUrl(coverRaw, siteRoot, mediaRoot),
       author: getAuthorName(raw),
       categories: getCategories(raw),
+      candidateCovers: normCandidates,
     },
     contentHtml,
   };

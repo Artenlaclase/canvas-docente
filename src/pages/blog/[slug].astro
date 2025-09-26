@@ -105,6 +105,7 @@ function resolveCoverPath(path: string | undefined): string | undefined {
             alt={wpPost!.data.title}
             loading="lazy"
             class="w-full aspect-[16/9] object-cover rounded-lg"
+            data-candidates={JSON.stringify(wpPost!.data.candidateCovers || [])}
           />
         ) : (
           <img
@@ -113,6 +114,7 @@ function resolveCoverPath(path: string | undefined): string | undefined {
             alt="Sin imagen"
             loading="lazy"
             class="w-full aspect-[16/9] object-cover rounded-lg opacity-80"
+            data-candidates={JSON.stringify(wpPost!.data.candidateCovers || [])}
           />
         );
       })()
@@ -171,12 +173,21 @@ function resolveCoverPath(path: string | undefined): string | undefined {
           const cover = document.getElementById('post-cover');
           if (cover && cover.tagName === 'IMG') {
             const img = /** @type {HTMLImageElement} */ (cover);
+            // Fallback rotation over candidate covers if first fails
+            const candidatesRaw = img.getAttribute('data-candidates');
+            let candidates: string[] = [];
+            try { candidates = candidatesRaw ? JSON.parse(candidatesRaw) : []; } catch {}
+            const originalSrc = img.getAttribute('src');
+            // Remove the already used cover from rotation list
+            let rotation = candidates.filter(c => c && c !== originalSrc);
+            let attempt = 0; // index into rotation
             console.info('[Blog Debug] Cover element found', {
               src: img.getAttribute('src'),
               currentSrc: img.currentSrc,
               srcset: img.getAttribute('srcset'),
               naturalWidth: img.naturalWidth,
               naturalHeight: img.naturalHeight,
+              candidates,
             });
             img.addEventListener('load', () => {
               console.info('[Blog Debug] Cover loaded', {
@@ -190,7 +201,33 @@ function resolveCoverPath(path: string | undefined): string | undefined {
                 src: img.getAttribute('src'),
                 currentSrc: img.currentSrc,
                 error: e,
+                attempt,
+                rotationLength: rotation.length,
               });
+              // Try next alternative size
+              if (rotation.length && attempt < rotation.length) {
+                const next = rotation[attempt++];
+                if (next && next !== img.getAttribute('src')) {
+                  console.warn('[Blog Debug] Trying next candidate cover', next);
+                  img.src = next;
+                  return;
+                }
+              }
+              // If no more alternatives and not yet proxied, try proxy endpoint (may bypass hotlink protection)
+              if (!img.dataset.proxyTried) {
+                img.dataset.proxyTried = '1';
+                const last = img.getAttribute('src') || originalSrc || '';
+                if (last.startsWith('/api/img-proxy')) return; // already proxied
+                console.warn('[Blog Debug] Attempting proxy for cover', last);
+                img.src = '/api/img-proxy?url=' + encodeURIComponent(last);
+                return;
+              }
+              // Final fallback: placeholder
+              if (!img.dataset.finalFallback) {
+                img.dataset.finalFallback = '1';
+                console.warn('[Blog Debug] Falling back to placeholder cover');
+                img.src = '/placeholder-cover.svg';
+              }
             });
           } else {
             console.info('[Blog Debug] No cover image element present');
