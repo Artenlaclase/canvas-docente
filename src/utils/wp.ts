@@ -43,13 +43,13 @@ function ensureApiBase(raw?: string): string | undefined {
 export function getWpBase(): string | undefined {
   // Prefer WP_API_BASE, fallback to PUBLIC_WP_API_BASE for flexibility
   // eslint-disable-next-line no-undef
-  const envAny: any = (typeof import.meta !== 'undefined' && (import.meta as any)?.env) ? (import.meta as any).env : {};
-  let b: string | undefined = envAny.WP_API_BASE || envAny.PUBLIC_WP_API_BASE;
-  // Runtime fallback for SSR Node: allow configuring via process.env without rebuild
-  // eslint-disable-next-line no-undef
-  if (!b && typeof process !== 'undefined') {
-    const pe: any = (process as any).env || {};
-    b = pe.WP_API_BASE || pe.PUBLIC_WP_API_BASE;
+  const pe: any = (typeof process !== 'undefined' && (process as any)?.env) ? (process as any).env : {};
+  // Runtime takes precedence so cPanel env overrides baked build vars
+  let b: string | undefined = pe.WP_API_BASE || pe.PUBLIC_WP_API_BASE;
+  if (!b) {
+    // eslint-disable-next-line no-undef
+    const envAny: any = (typeof import.meta !== 'undefined' && (import.meta as any)?.env) ? (import.meta as any).env : {};
+    b = envAny.WP_API_BASE || envAny.PUBLIC_WP_API_BASE;
   }
   return ensureApiBase(b);
 }
@@ -90,13 +90,12 @@ export function getMediaRootFromBase(base?: string): string | undefined {
 export function getConfiguredMediaRoot(): string | undefined {
   // Allow explicit override via env
   // eslint-disable-next-line no-undef
-  const envAny: any = (typeof import.meta !== 'undefined' && (import.meta as any)?.env) ? (import.meta as any).env : {};
-  let override: string | undefined = envAny.WP_MEDIA_ROOT || envAny.PUBLIC_WP_MEDIA_ROOT;
-  // Runtime fallback
-  // eslint-disable-next-line no-undef
-  if (!override && typeof process !== 'undefined') {
-    const pe: any = (process as any).env || {};
-    override = pe.WP_MEDIA_ROOT || pe.PUBLIC_WP_MEDIA_ROOT;
+  const pe: any = (typeof process !== 'undefined' && (process as any)?.env) ? (process as any).env : {};
+  let override: string | undefined = pe.WP_MEDIA_ROOT || pe.PUBLIC_WP_MEDIA_ROOT;
+  if (!override) {
+    // eslint-disable-next-line no-undef
+    const envAny: any = (typeof import.meta !== 'undefined' && (import.meta as any)?.env) ? (import.meta as any).env : {};
+    override = envAny.WP_MEDIA_ROOT || envAny.PUBLIC_WP_MEDIA_ROOT;
   }
   if (override && /^https?:\/\//i.test(override)) return override.replace(/\/$/, '');
   return getMediaRootFromBase(getWpBase());
@@ -105,11 +104,12 @@ export function getConfiguredMediaRoot(): string | undefined {
 function shouldProxyImages(): boolean {
   // Enable with PUBLIC_IMAGE_PROXY=on (or true). Useful in dev to bypass hotlinking.
   // eslint-disable-next-line no-undef
-  const envAny: any = (typeof import.meta !== 'undefined' && (import.meta as any)?.env) ? (import.meta as any).env : {};
-  let v: string = (envAny.PUBLIC_IMAGE_PROXY || envAny.IMAGE_PROXY || '').toString().toLowerCase();
-  if (!v && typeof process !== 'undefined') {
-    const pe: any = (process as any).env || {};
-    v = (pe.PUBLIC_IMAGE_PROXY || pe.IMAGE_PROXY || '').toString().toLowerCase();
+  const pe: any = (typeof process !== 'undefined' && (process as any)?.env) ? (process as any).env : {};
+  let v: string = (pe.PUBLIC_IMAGE_PROXY || pe.IMAGE_PROXY || '').toString().toLowerCase();
+  if (!v) {
+    // eslint-disable-next-line no-undef
+    const envAny: any = (typeof import.meta !== 'undefined' && (import.meta as any)?.env) ? (import.meta as any).env : {};
+    v = (envAny.PUBLIC_IMAGE_PROXY || envAny.IMAGE_PROXY || '').toString().toLowerCase();
   }
   return v === 'on' || v === 'true' || v === '1';
 }
