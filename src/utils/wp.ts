@@ -126,6 +126,8 @@ function shouldProxyImages(): boolean {
     const envAny: any = (typeof import.meta !== 'undefined' && (import.meta as any)?.env) ? (import.meta as any).env : {};
     v = (envAny.PUBLIC_IMAGE_PROXY || envAny.IMAGE_PROXY || '').toString().toLowerCase();
   }
+  // Default to OFF in production to avoid cross-origin/protection issues on hosting
+  if (!v && typeof process !== 'undefined' && process.env && process.env.NODE_ENV === 'production') return false;
   return v === 'on' || v === 'true' || v === '1';
 }
 
