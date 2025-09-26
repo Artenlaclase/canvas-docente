@@ -474,6 +474,31 @@ function getCategories(raw: WpRawPost): Array<{ id?: number; name: string; slug?
   return mapped.length ? mapped : undefined;
 }
 
+// Generar bases alternativas (sin www., reemplazando www.api. -> api.) para intentar si la base principal falla o devuelve vacío
+function getAlternativeBases(base?: string): string[] {
+  if (!base) return [];
+  try {
+    const u = new URL(base.replace(/\/$/, ''));
+    const variants = new Set<string>();
+    variants.add(base.replace(/\/$/, ''));
+    if (u.host.startsWith('www.')) {
+      const noWww = base.replace('//www.', '//');
+      variants.add(noWww.replace(/\/$/, ''));
+    }
+    if (/^www\.?api\./i.test(u.host)) {
+      const alt = base.replace('//www.api.', '//api.');
+      variants.add(alt.replace(/\/$/, ''));
+    }
+    if (/^api\./i.test(u.host)) {
+      const main = base.replace('//api.', '//');
+      variants.add(main.replace(/\/$/, ''));
+    }
+    return Array.from(variants).filter(v => v !== base.replace(/\/$/, ''));
+  } catch {
+    return [];
+  }
+}
+
 export function normalizePost(raw: WpRawPost): NormalizedPost {
   const title = raw.title?.rendered ?? '';
   const excerpt = raw.excerpt?.rendered ?? '';
@@ -605,6 +630,23 @@ export async function getWpPostBySlug(slug: string): Promise<NormalizedPost | un
   }
   let first = items?.[0];
   if (first) return normalizePost(first);
+
+  // 1b) Intentar bases alternativas si no hubo resultado (slug puede existir en host sin www.)
+  const altBases = getAlternativeBases(base);
+  for (const altBase of altBases) {
+    try {
+      const altUrl = altBase.includes('rest_route=')
+        ? `${altBase}/posts&status=publish&slug=${encodeURIComponent(slug)}&_embed=1${langPart}`
+        : `${altBase}/posts?status=publish&slug=${encodeURIComponent(slug)}&_embed=1${langPart}`;
+      const altItems = await fetchJson<WpRawPost[]>(altUrl);
+      if (altItems && altItems[0]) {
+        if (typeof process !== 'undefined' && (process as any).env?.DEBUG_BLOG) {
+          console.log('[wp] Slug resuelto usando base alternativa', { slug, altBase });
+        }
+        return normalizePost(altItems[0]);
+      }
+    } catch {/* ignore */}
+  }
   // 2) Fallback: buscar por texto si no se encontró por slug (algunos sitios alteran slugs)
   let searchUrl = base.includes('rest_route=')
     ? `${base}/posts&status=publish&search=${encodeURIComponent(slug)}&_embed=1&per_page=1${langPart}`
@@ -650,4 +692,21 @@ export async function getWpPostById(id: number): Promise<NormalizedPost | undefi
     }
     return undefined;
   }
+  // Bases alternativas (host variantes) si no se encontró (o no se pudo) en la base principal
+  const altBases = getAlternativeBases(base);
+  for (const altBase of altBases) {
+    try {
+      const altUrl = altBase.includes('rest_route=')
+        ? `${altBase}/posts/${encodeURIComponent(String(id))}?_embed=1${langPart}`
+        : `${altBase}/posts/${encodeURIComponent(String(id))}?_embed=1${langPart}`;
+      const item = await fetchJson<WpRawPost>(altUrl);
+      if (item) {
+        if (typeof process !== 'undefined' && (process as any).env?.DEBUG_BLOG) {
+          console.log('[wp] Post ID resuelto con base alternativa', { id, altBase });
+        }
+        return normalizePost(item);
+      }
+    } catch {/* ignore */}
+  }
+  return undefined;
 }
