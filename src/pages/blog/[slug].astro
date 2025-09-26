@@ -92,15 +92,30 @@ function resolveCoverPath(path: string | undefined): string | undefined {
   <article class="prose prose-lg md:prose-xl mx-auto max-w-4xl">
     <h1>{isWP ? wpPost!.data.title : localPost.data.title}</h1>
     {isWP ? (
-      wpPost!.data.cover ? (
-        <img
-          id="post-cover"
-          src={wpPost!.data.cover}
-          alt={wpPost!.data.title}
-          loading="lazy"
-          class="w-full aspect-[16/9] object-cover rounded-lg"
-        />
-      ) : null
+      (() => {
+        const cover = wpPost!.data.cover || (() => {
+          // fallback: first <img src> inside contentHtml
+          const m = wpPost!.contentHtml?.match(/<img[^>]+src=["']([^"']+)["']/i); return m ? m[1] : undefined;
+        })();
+        const finalCover = cover || '/placeholder-cover.svg';
+        return cover ? (
+          <img
+            id="post-cover"
+            src={finalCover}
+            alt={wpPost!.data.title}
+            loading="lazy"
+            class="w-full aspect-[16/9] object-cover rounded-lg"
+          />
+        ) : (
+          <img
+            id="post-cover"
+            src={finalCover}
+            alt="Sin imagen"
+            loading="lazy"
+            class="w-full aspect-[16/9] object-cover rounded-lg opacity-80"
+          />
+        );
+      })()
     ) : (
       (() => {
         const coverPath = localPost.data.cover as string | undefined;

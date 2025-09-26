@@ -27,6 +27,7 @@ if (!wpBase) {
     totalPages = tp || 1;
   } catch (err) {
     console.error('[Blog] Error consultando WordPress:', err);
+    console.warn('[Blog] Sugerencia: abrir /api/wp-detect para probar endpoints alternativos automáticamente.');
   }
 }
 

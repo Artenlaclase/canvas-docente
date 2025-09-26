@@ -82,23 +82,21 @@ export function getSiteRootFromBase(base?: string): string | undefined {
 }
 
 // Derive a media root for static assets (uploads), e.g., swap api. subdomain for main host but keep subdirectory like /blog
-export function getMediaRootFromBase(base?: string): string | undefined {
-  const site = getSiteRootFromBase(base);
-  if (!site) return undefined;
+function getMediaRootFromBase(base?: string): string | undefined {
+  if (!base) return undefined;
   try {
+    const site = getSiteRootFromBase(base);
+    if (!site) return undefined;
     const u = new URL(site);
-    let host = u.host;
-    // Common pattern: API served from api.example.com or www.api.example.com
-    // Normalize by stripping leading www. first, then api. to align with main host
-    host = host.replace(/^www\./i, '');
+    // Normalizar host: remover www. y api. para apuntar al dominio principal
+    let host = u.host.replace(/^www\./i, '');
     if (/^api\./i.test(host)) host = host.replace(/^api\./i, '');
-    // Optionally also normalize www if needed in future
     const media = new URL(`${u.protocol}//${host}`);
-    // Preserve subdirectory path (e.g., /blog)
+    // Conservar subdirectorio (/blog) si existiera
     media.pathname = u.pathname || '/';
     return media.toString().replace(/\/$/, '');
   } catch {
-    return site;
+    return undefined;
   }
 }
 
@@ -204,6 +202,20 @@ function rewriteContentHtml(html: string, siteRoot?: string, mediaRoot?: string)
   // Promote data-lazy-src and data-src to src
   out = out.replace(/(<img[^>]*?)\sdata-lazy-src=["']([^"']+)["']([^>]*>)/gi, (_m, pre, url, post) => `${pre} src="${norm(url)}"${post}`);
   out = out.replace(/(<img[^>]*?)\sdata-src=["']([^"']+)["']([^>]*>)/gi, (_m, pre, url, post) => `${pre} src="${norm(url)}"${post}`);
+  // Otros atributos comunes en builders/plugins
+  out = out.replace(/(<img[^>]*?)\sdata-orig-file=["']([^"']+)["']([^>]*>)/gi, (_m, pre, url, post) => {
+    // Solo establece src si no existe ya
+    if (/\ssrc=/.test(pre+post)) return `${pre} data-orig-file="${url}"${post}`;
+    return `${pre} src="${norm(url)}" data-orig-file="${url}"${post}`;
+  });
+  out = out.replace(/(<img[^>]*?)\sdata-large-file=["']([^"']+)["']([^>]*>)/gi, (_m, pre, url, post) => {
+    if (/\ssrc=/.test(pre+post)) return `${pre} data-large-file="${url}"${post}`;
+    return `${pre} src="${norm(url)}" data-large-file="${url}"${post}`;
+  });
+  out = out.replace(/(<img[^>]*?)\sdata-full-url=["']([^"']+)["']([^>]*>)/gi, (_m, pre, url, post) => {
+    if (/\ssrc=/.test(pre+post)) return `${pre} data-full-url="${url}"${post}`;
+    return `${pre} src="${norm(url)}" data-full-url="${url}"${post}`;
+  });
   // Normalize existing src
   out = out.replace(/(<img[^>]*?\ssrc=["'])([^"']+)(["'])/gi, (_m, pre, url, suf) => `${pre}${norm(url)}${suf}`);
   // Normalize srcset (comma-separated list)
@@ -217,6 +229,20 @@ function rewriteContentHtml(html: string, siteRoot?: string, mediaRoot?: string)
       return `${norm(url)}${rest ? ' ' + rest : ''}`;
     }).join(', ');
     return `${pre}${fixed}${suf}`;
+  });
+  // Lazy srcset variantes
+  out = out.replace(/(<img[^>]*?)\sdata-srcset=["']([^"']+)["']([^>]*>)/gi, (_m, pre, list, post) => {
+    const fixed = list.split(',').map((entry: string) => {
+      const e = entry.trim();
+      if (!e) return e;
+      const parts = e.split(/\s+/);
+      const url = parts.shift() || '';
+      const rest = parts.join(' ');
+      return `${norm(url)}${rest ? ' ' + rest : ''}`;
+    }).join(', ');
+    // Si no existe srcset normal, lo añadimos.
+    if (!/\ssrcset=/.test(pre+post)) return `${pre} srcset="${fixed}"${post}`;
+    return `${pre} data-srcset-original="${list}"${post}`;
   });
 
   // Helper to add/update query params on a URL string safely
@@ -307,9 +333,35 @@ function stripHtml(input: string): string {
 
 function firstImageFromHtml(html?: string): string | undefined {
   if (!html || typeof html !== 'string') return undefined;
-  // Prefer explicit src; also consider common lazy attributes
-  const m = html.match(/<(?:img)[^>]+(?:data-lazy-src|data-src|src)=["']([^"']+)["']/i);
-  return m?.[1];
+  // Buscar en orden de probabilidad diversos atributos de plugins de lazy loading
+  const patterns: RegExp[] = [
+    /<img[^>]+data-lazy-src=["']([^"']+)["']/i,
+    /<img[^>]+data-src=["']([^"']+)["']/i,
+    /<img[^>]+data-full-url=["']([^"']+)["']/i,
+    /<img[^>]+data-large-file=["']([^"']+)["']/i,
+    /<img[^>]+data-orig-file=["']([^"']+)["']/i,
+    /<img[^>]+src=["']([^"']+)["']/i,
+    // Dentro de <noscript>
+    /<noscript>\s*<img[^>]+src=["']([^"']+)["']/i,
+  ];
+  for (const r of patterns) {
+    const m = html.match(r);
+    if (m && m[1]) return m[1];
+  }
+  // Último recurso: srcset (tomar primer URL)
+  const srcset = html.match(/<img[^>]+srcset=["']([^"']+)["']/i);
+  if (srcset && srcset[1]) {
+    const first = srcset[1].split(',')[0].trim().split(/\s+/)[0];
+    if (first) return first;
+  }
+  return undefined;
+}
+
+function firstImageFromRewrittenHtml(html?: string): string | undefined {
+  if (!html) return undefined;
+  const m = html.match(/<img[^>]+src=["']([^"']+)["']/i);
+  if (m && m[1]) return m[1];
+  return undefined;
 }
 
 function getFeaturedImage(raw: WpRawPost): string | undefined {
@@ -361,6 +413,15 @@ export function normalizePost(raw: WpRawPost): NormalizedPost {
     if (firstImg) coverRaw = firstImg;
   }
   const contentHtml = rewriteContentHtml(content, siteRoot, mediaRoot);
+  // Fallback adicional: si tras reescritura no hay portada, intentar nuevamente sobre el HTML ya normalizado.
+  if (!coverRaw) {
+    const fromRewritten = firstImageFromRewrittenHtml(contentHtml);
+    if (fromRewritten) coverRaw = fromRewritten;
+  }
+  // Protocol-relative URLs (//domain.com/...) -> forzar https por defecto
+  if (coverRaw && /^\/\//.test(coverRaw)) {
+    coverRaw = 'https:' + coverRaw;
+  }
   return {
     id: raw.id,
     slug: raw.slug,
@@ -472,8 +533,17 @@ export async function getWpPostBySlug(slug: string): Promise<NormalizedPost | un
     first = sItems?.[0];
     return first ? normalizePost(first) : undefined;
   } catch {
-    return undefined;
+    // Ignorar error de búsqueda, continuar a fallback final
   }
+  // 3) Fallback final: descargar listado (límite razonable) y buscar slug localmente
+  try {
+    const bulk = await listWpPosts(100);
+    const hit = bulk.find(p => p.slug === slug);
+    if (hit) return hit;
+  } catch (e: any) {
+    if (typeof console !== 'undefined') console.warn('[wp] bulk fallback failed for slug', slug, e?.message);
+  }
+  return undefined;
 }
 
 export async function getWpPostById(id: number): Promise<NormalizedPost | undefined> {

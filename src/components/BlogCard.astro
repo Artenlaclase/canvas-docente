@@ -41,10 +41,14 @@ if (import.meta.env.DEV && coverPath && isLocal && !resolved) {
 
 // WP posts (normalized) have numeric id; local content does not
 const isWpPost = typeof post.id === 'number';
-// For WP posts: ONLY use featured image (cover). If missing, don't fallback to HTML to avoid randomness.
-// For local posts: use resolved asset or cover, and as last resort the first image in content.
-const fallbackHtmlImg = !coverPath && !isWpPost ? firstImageFromHtml(post.contentHtml) : undefined;
-const displayCover = isWpPost ? (coverPath || undefined) : (resolved || coverPath || fallbackHtmlImg);
+// NEW: permit fallback for WP posts too if no featured image was detected.
+// We prefer consistency (featured image) but showing something is better than nada.
+const fallbackHtmlImg = !coverPath ? firstImageFromHtml(post.contentHtml) : undefined;
+let displayCover = isWpPost ? (coverPath || fallbackHtmlImg) : (resolved || coverPath || fallbackHtmlImg);
+// Optional placeholder if still nothing
+if (!displayCover) {
+  displayCover = '/placeholder-cover.svg';
+}
 ---
 <a href={`/blog/${encodeURIComponent(post.slug)}${post.id ? `?id=${encodeURIComponent(post.id)}` : ''}`} class="group block rounded-lg overflow-hidden border border-slate-200 hover:shadow-md transition">
   {displayCover ? (
