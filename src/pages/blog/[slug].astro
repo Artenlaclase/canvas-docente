@@ -15,20 +15,41 @@ const idParam = Astro.url.searchParams.get('id');
 let wpPost: NormalizedPost | undefined;
 let localPost: any | undefined;
 const wpBase = getWpBase();
-if (wpBase && slug) {
-  try {
-    wpPost = await getWpPostBySlug(slug);
-  } catch (e) {
-  console.warn('[Blog SSR] Error al obtener post WP por slug:', slug, e);
-  }
-}
-// Fallback: si vino ?id= y no encontramos por slug, intentamos por ID
-if (!wpPost && idParam && /^\d+$/.test(idParam)) {
+
+// NUEVO: si hay idParam, intentamos primero por ID (más determinista)
+if (wpBase && idParam && /^\d+$/.test(idParam)) {
   try {
     wpPost = await getWpPostById(Number(idParam));
+    if (wpPost && process?.env?.DEBUG_BLOG) {
+      console.log('[Blog SSR] Resuelto por ID primero', { requestedId: idParam, resolvedSlug: wpPost.slug });
+    }
   } catch (e) {
-  console.warn('[Blog SSR] Error al obtener post WP por id:', idParam, e);
+    console.warn('[Blog SSR] Error al obtener post WP por id (orden primero):', idParam, e);
   }
+}
+
+// Si no lo obtuvimos por ID o no había idParam, intentar por slug
+if (wpBase && slug && !wpPost) {
+  try {
+    wpPost = await getWpPostBySlug(slug);
+    if (wpPost && process?.env?.DEBUG_BLOG) {
+      console.log('[Blog SSR] Resuelto por slug', { slug });
+    }
+  } catch (e) {
+    console.warn('[Blog SSR] Error al obtener post WP por slug:', slug, e);
+  }
+}
+
+// Si lo obtuvimos por ID pero el slug en la URL no coincide con el slug real del post, redirigir a canónico
+if (wpPost && slug && wpPost.slug && slug !== wpPost.slug) {
+  const canonical = `/blog/${encodeURIComponent(wpPost.slug)}?id=${encodeURIComponent(String(wpPost.id || ''))}`;
+  if (process?.env?.DEBUG_BLOG) {
+    console.log('[Blog SSR] Redirigiendo a slug canónico', { from: slug, to: wpPost.slug, canonical });
+  }
+  if (Astro.redirect) {
+    return Astro.redirect(canonical, 301);
+  }
+  return new Response('', { status: 301, headers: { Location: canonical } });
 }
 if (!wpPost && slug) {
   const all = await getCollection('blog');
