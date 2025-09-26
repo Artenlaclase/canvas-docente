@@ -88,7 +88,9 @@ export function getMediaRootFromBase(base?: string): string | undefined {
   try {
     const u = new URL(site);
     let host = u.host;
-    // Common pattern: API served from api.example.com but media served from example.com
+    // Common pattern: API served from api.example.com or www.api.example.com
+    // Normalize by stripping leading www. first, then api. to align with main host
+    host = host.replace(/^www\./i, '');
     if (/^api\./i.test(host)) host = host.replace(/^api\./i, '');
     // Optionally also normalize www if needed in future
     const media = new URL(`${u.protocol}//${host}`);
