@@ -45,7 +45,7 @@ process.on('uncaughtException', (err) => {
 				}
 			});
 			const port = Number(process.env.PORT) || 3000;
-			server.listen(port, () => console.log(`[server] HTTP wrapper listening on port ${port}`));
+			server.listen(port, '0.0.0.0', () => console.log(`[server] HTTP wrapper listening on port ${port}`));
 		} else {
 			const portInfo = process.env.PORT ? `port ${process.env.PORT}` : 'default port';
 			console.log(`[server] Astro entry imported; server should be listening on ${portInfo}.`);
