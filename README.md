@@ -220,3 +220,80 @@ npm run build
 Notas:
 - Si tu hosting no soporta Node.js Apps, necesitarías un server con Node, o convertir a `output: 'static'` (perderías SSR/búsqueda en vivo).
 - Para puerto distinto en local: `set PORT=4322 && npm run start` (Windows PowerShell: `$env:PORT=4322; npm run start`).
+
+### Diagnóstico de rutas del Blog en producción
+
+Si `/blog/<slug>` devuelve 404 en tu hosting (cPanel/Passenger) sigue estos pasos tras desplegar la última build:
+
+1. Abre `/api/diag-routes` – Debe listar las rutas esperadas del blog y las variables de entorno clave.
+2. Abre `/api/env-debug` – Verifica que `PUBLIC_WP_MEDIA_ROOT` NO sea `/blog` (si aparece así, elimínala del entorno y reinicia). También revisa `WP_API_BASE`.
+3. Abre `/api/wp-list` – Debe devolver un JSON con posts (primer página desde WordPress). Si falla, hay problema de conexión a WP.
+4. Abre `/api/blog-links` – Haz clic en un enlace de slug y observa si 404.
+5. Prueba acceso directo por ID: `/blog/id/123` (reemplaza 123 por un ID real de WP). Si esto funciona pero `/blog/mi-post` no, el problema es de reescrituras Apache.
+6. Prueba el fallback: `/blog/mi-post/` (con barra final) y `/blog/mi-post?x=1` para ver si alguna variante pasa al servidor Node.
+7. Activa logs temporales: define `DEBUG_BLOG=1` en entorno y reinicia; revisa logs de Passenger para ver si se registra la petición.
+
+#### .htaccess mínimo (todas las rutas a Node)
+
+Si no tienes PHP conviviendo, puedes forzar todo a Node:
+
+```apache
+PassengerEnabled on
+PassengerAppType node
+PassengerStartupFile app.cjs
+PassengerAppRoot /home/<USER>/canvas-docente
+PassengerNodejs /usr/bin/node
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+  # Deja pasar archivos/directorios reales (imágenes, CSS, etc.)
+  RewriteCond %{REQUEST_FILENAME} -f [OR]
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteRule ^ - [L]
+  # Todo lo demás a la app Node
+  RewriteRule ^.*$ /app.cjs [L]
+</IfModule>
+```
+
+#### .htaccess solo para /blog (convive con sitio principal PHP)
+
+```apache
+PassengerEnabled on
+PassengerAppType node
+PassengerStartupFile app.cjs
+PassengerAppRoot /home/<USER>/canvas-docente
+PassengerNodejs /usr/bin/node
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+  RewriteCond %{REQUEST_FILENAME} -f [OR]
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteRule ^ - [L]
+  RewriteRule ^blog/.*$ /app.cjs [L]
+</IfModule>
+```
+
+Si aún 404:
+- Asegúrate de que `app.cjs` esté en la raíz de App Root.
+- Reinicia la aplicación en cPanel tras cambiar `.htaccess`.
+- Verifica que no exista un archivo físico `blog` o `blog/index.html` que intercepte.
+
+#### Imágenes de WordPress rotas
+
+Generalmente se debe a `PUBLIC_WP_MEDIA_ROOT` erróneo. Solución:
+
+1. Elimina esa variable si apunta a `/blog`.
+2. Deja que el código detecte automáticamente `https://artenlaclase.cl/wp-content/uploads`.
+3. Limpia caché del navegador / CDN.
+4. Revisa el HTML renderizado (Inspeccionar) y confirma que las rutas de imágenes comienzan por `https://artenlaclase.cl/wp-content/uploads/...`.
+
+#### Recolección de evidencia
+Comparte en soporte la salida de:
+- `/api/diag-routes`
+- `/api/env-debug`
+- Una URL 404 de slug y la misma usando `/blog/id/<id>` (que funcione)
+- Una URL directa de imagen rota
+
+Con esos datos se puede ajustar definitivamente la regla de reescritura.

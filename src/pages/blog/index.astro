@@ -80,9 +80,14 @@ const getCats = (post: any) => {
       </aside>
     </div>
   ) : (
-    <div class="text-center text-slate-600 my-16">
-      <p class="mb-2">No hay entradas disponibles.</p>
-      <p class="text-sm">Verifique la conexión con WordPress o intente más tarde.</p>
+    <div class="text-center text-slate-600 my-16 space-y-2">
+      <p class="font-medium">No hay entradas disponibles.</p>
+      {wpBase ? (
+        <p class="text-sm">La API de WordPress no devolvió datos o produjo un error. Revisa el valor de <code>WP_API_BASE</code> y que <code>/posts</code> responda JSON.</p>
+      ) : (
+        <p class="text-sm">Falta configurar <code>WP_API_BASE</code> en tu entorno (.env o variables del hosting).</p>
+      )}
+      <p class="text-xs text-slate-500">Debug rápido: abre <code>/api/diag-routes</code> y <code>/api/env-debug</code>.</p>
     </div>
   )}
   <style is:inline>

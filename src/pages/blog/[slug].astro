@@ -8,6 +8,9 @@ export const prerender = false;
 
 // SSR: resolver el post por slug en cada request para reflejar cambios inmediatos en WordPress
 const { slug } = Astro.params;
+if (typeof process !== 'undefined' && process.env && process.env.DEBUG_BLOG) {
+  console.log('[route:/blog/[slug]] incoming', { slug, url: Astro.url.toString() });
+}
 const idParam = Astro.url.searchParams.get('id');
 let wpPost: NormalizedPost | undefined;
 let localPost: any | undefined;
@@ -16,7 +19,7 @@ if (wpBase && slug) {
   try {
     wpPost = await getWpPostBySlug(slug);
   } catch (e) {
-    console.warn('[Blog SSR] Error al obtener post WP por slug:', e);
+  console.warn('[Blog SSR] Error al obtener post WP por slug:', slug, e);
   }
 }
 // Fallback: si vino ?id= y no encontramos por slug, intentamos por ID
@@ -24,7 +27,7 @@ if (!wpPost && idParam && /^\d+$/.test(idParam)) {
   try {
     wpPost = await getWpPostById(Number(idParam));
   } catch (e) {
-    console.warn('[Blog SSR] Error al obtener post WP por id:', e);
+  console.warn('[Blog SSR] Error al obtener post WP por id:', idParam, e);
   }
 }
 if (!wpPost && slug) {

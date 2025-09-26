@@ -112,7 +112,26 @@ export function getConfiguredMediaRoot(): string | undefined {
     const envAny: any = (typeof import.meta !== 'undefined' && (import.meta as any)?.env) ? (import.meta as any).env : {};
     override = envAny.WP_MEDIA_ROOT || envAny.PUBLIC_WP_MEDIA_ROOT;
   }
-  if (override && /^https?:\/\//i.test(override)) return override.replace(/\/$/, '');
+  if (override && /^https?:\/\//i.test(override)) {
+    try {
+      const u = new URL(override);
+      const site = getSiteRootFromBase(getWpBase());
+      // If override path is exactly '/blog' (or ends with '/blog') but the WP site root has no subdirectory
+      // it's likely a misconfiguration (would produce /blog/wp-content/uploads *404*). Strip the path.
+      const sitePath = site ? new URL(site).pathname.replace(/\/$/, '') : '';
+      const overridePath = u.pathname.replace(/\/$/, '');
+      if (overridePath === '/blog' && (!sitePath || sitePath === '')) {
+        // Log once (server side) to help debugging
+        if (typeof console !== 'undefined') {
+          console.warn('[wp] Ignorando PUBLIC_WP_MEDIA_ROOT=/blog porque WP_API_BASE no está en un subdirectorio. Usando raíz del sitio.');
+        }
+        u.pathname = '/';
+      }
+      return u.toString().replace(/\/$/, '');
+    } catch {
+      // Fallback to derived root if parsing fails
+    }
+  }
   return getMediaRootFromBase(getWpBase());
 }
 
@@ -243,14 +262,35 @@ function rewriteContentHtml(html: string, siteRoot?: string, mediaRoot?: string)
 
 async function fetchJson<T>(url: string): Promise<T> {
   const res = await fetch(url, { headers: { Accept: 'application/json', 'User-Agent': 'canvas-docente-astro/1.0 (+https://artenlaclase.cl)' } });
-  if (!res.ok) throw new Error(`WP fetch failed ${res.status}: ${url}`);
+  const ct = res.headers.get('content-type') || '';
+  if (!res.ok) {
+    let snippet = '';
+    try { snippet = (await res.text()).slice(0, 180); } catch {}
+    throw new Error(`WP fetch failed ${res.status}: ${url} :: ${snippet}`);
+  }
+  if (!/application\/json/i.test(ct)) {
+    let snippet = '';
+    try { snippet = (await res.text()).slice(0, 180); } catch {}
+    throw new Error(`WP fetch non-JSON (${ct}) at ${url} :: ${snippet}`);
+  }
   return (await res.json()) as T;
 }
 
 async function fetchJsonWithHeaders<T>(url: string): Promise<{ data: T; headers: Headers }>{
   const res = await fetch(url, { headers: { Accept: 'application/json', 'User-Agent': 'canvas-docente-astro/1.0 (+https://artenlaclase.cl)' } });
-  if (!res.ok) throw new Error(`WP fetch failed ${res.status}: ${url}`);
-  const data = (await res.json()) as T;
+  const ct = res.headers.get('content-type') || '';
+  if (!res.ok) {
+    let snippet = '';
+    try { snippet = (await res.text()).slice(0, 180); } catch {}
+    throw new Error(`WP fetch failed ${res.status}: ${url} :: ${snippet}`);
+  }
+  if (!/application\/json/i.test(ct)) {
+    let snippet = '';
+    try { snippet = (await res.text()).slice(0, 180); } catch {}
+    throw new Error(`WP fetch non-JSON (${ct}) at ${url} :: ${snippet}`);
+  }
+  const clone = res.clone();
+  const data = (await clone.json()) as T;
   return { data, headers: res.headers };
 }
 
@@ -337,46 +377,94 @@ export function normalizePost(raw: WpRawPost): NormalizedPost {
 }
 
 export async function listWpPosts(limit = 100): Promise<NormalizedPost[]> {
-  const base = getWpBase();
+  let base = getWpBase();
   if (!base) return [];
   const lang = getWpLang();
   const langPart = lang ? `&lang=${encodeURIComponent(lang)}` : '';
-  const url = base.includes('rest_route=')
+  let url = base.includes('rest_route=')
     ? `${base}/posts&status=publish&_embed=1&per_page=${Math.min(limit, 100)}${langPart}`
     : `${base}/posts?status=publish&_embed=1&per_page=${Math.min(limit, 100)}${langPart}`;
-  const items = await fetchJson<WpRawPost[]>(url);
+  let items: WpRawPost[] = [];
+  try {
+    items = await fetchJson<WpRawPost[]>(url);
+  } catch (e: any) {
+    if (base.includes('rest_route=')) {
+      // Intentar fallback a /wp-json/wp/v2
+      const alt = base.replace(/\/?\?rest_route=\/wp\/v2$/,'').replace(/\/$/,'') + '/wp-json/wp/v2';
+      try {
+        const altUrl = `${alt}/posts?status=publish&_embed=1&per_page=${Math.min(limit, 100)}${langPart}`;
+        items = await fetchJson<WpRawPost[]>(altUrl);
+        base = alt; // actualizar base efectiva
+      } catch {
+        throw e;
+      }
+    } else {
+      throw e;
+    }
+  }
   return items.map(normalizePost);
 }
 
 export async function listWpPostsPage(page = 1, perPage = 9, opts?: { search?: string }): Promise<{ posts: NormalizedPost[]; total: number; totalPages: number }>{
-  const base = getWpBase();
+  let base = getWpBase();
   if (!base) return { posts: [], total: 0, totalPages: 0 };
   const lang = getWpLang();
   const searchPart = opts?.search ? `&search=${encodeURIComponent(opts.search)}` : '';
   const langPart = lang ? `&lang=${encodeURIComponent(lang)}` : '';
-  const url = base.includes('rest_route=')
+  let url = base.includes('rest_route=')
     ? `${base}/posts&status=publish&_embed=1&per_page=${Math.min(perPage, 100)}&page=${Math.max(1, page)}${searchPart}${langPart}`
     : `${base}/posts?status=publish&_embed=1&per_page=${Math.min(perPage, 100)}&page=${Math.max(1, page)}${searchPart}${langPart}`;
-  const { data, headers } = await fetchJsonWithHeaders<WpRawPost[]>(url);
+  let data: WpRawPost[] = [];
+  let headers: Headers;
+  try {
+    const r = await fetchJsonWithHeaders<WpRawPost[]>(url); data = r.data; headers = r.headers;
+  } catch (e: any) {
+    if (base.includes('rest_route=')) {
+      const alt = base.replace(/\/?\?rest_route=\/wp\/v2$/,'').replace(/\/$/,'') + '/wp-json/wp/v2';
+      try {
+        const altUrl = `${alt}/posts?status=publish&_embed=1&per_page=${Math.min(perPage, 100)}&page=${Math.max(1, page)}${searchPart}${langPart}`;
+        const r2 = await fetchJsonWithHeaders<WpRawPost[]>(altUrl); data = r2.data; headers = r2.headers; base = alt;
+      } catch {
+        throw e;
+      }
+    } else {
+      throw e;
+    }
+  }
   const total = Number(headers.get('X-WP-Total') || headers.get('x-wp-total') || data.length || 0);
   const totalPages = Number(headers.get('X-WP-TotalPages') || headers.get('x-wp-totalpages') || (total ? Math.ceil(total / perPage) : 0));
   return { posts: data.map(normalizePost), total, totalPages };
 }
 
 export async function getWpPostBySlug(slug: string): Promise<NormalizedPost | undefined> {
-  const base = getWpBase();
+  let base = getWpBase();
   if (!base) return undefined;
   const lang = getWpLang();
   // 1) Intento directo por slug (con status=publish para evitar borradores)
   const langPart = lang ? `&lang=${encodeURIComponent(lang)}` : '';
-  const url = base.includes('rest_route=')
+  let url = base.includes('rest_route=')
     ? `${base}/posts&status=publish&slug=${encodeURIComponent(slug)}&_embed=1${langPart}`
     : `${base}/posts?status=publish&slug=${encodeURIComponent(slug)}&_embed=1${langPart}`;
-  const items = await fetchJson<WpRawPost[]>(url);
+  let items: WpRawPost[] = [];
+  try {
+    items = await fetchJson<WpRawPost[]>(url);
+  } catch (e: any) {
+    if (base.includes('rest_route=')) {
+      const alt = base.replace(/\/?\?rest_route=\/wp\/v2$/,'').replace(/\/$/,'') + '/wp-json/wp/v2';
+      try {
+        const altUrl = `${alt}/posts?status=publish&slug=${encodeURIComponent(slug)}&_embed=1${langPart}`;
+        items = await fetchJson<WpRawPost[]>(altUrl); base = alt;
+      } catch {
+        throw e;
+      }
+    } else {
+      throw e;
+    }
+  }
   let first = items?.[0];
   if (first) return normalizePost(first);
   // 2) Fallback: buscar por texto si no se encontró por slug (algunos sitios alteran slugs)
-  const searchUrl = base.includes('rest_route=')
+  let searchUrl = base.includes('rest_route=')
     ? `${base}/posts&status=publish&search=${encodeURIComponent(slug)}&_embed=1&per_page=1${langPart}`
     : `${base}/posts?status=publish&search=${encodeURIComponent(slug)}&_embed=1&per_page=1${langPart}`;
   try {
@@ -389,17 +477,26 @@ export async function getWpPostBySlug(slug: string): Promise<NormalizedPost | un
 }
 
 export async function getWpPostById(id: number): Promise<NormalizedPost | undefined> {
-  const base = getWpBase();
+  let base = getWpBase();
   if (!base) return undefined;
   const lang = getWpLang();
   const langPart = lang ? `&lang=${encodeURIComponent(lang)}` : '';
-  const url = base.includes('rest_route=')
+  let url = base.includes('rest_route=')
     ? `${base}/posts/${encodeURIComponent(String(id))}?_embed=1${langPart}`
     : `${base}/posts/${encodeURIComponent(String(id))}?_embed=1${langPart}`;
   try {
     const item = await fetchJson<WpRawPost>(url);
     return item ? normalizePost(item) : undefined;
-  } catch {
+  } catch (e: any) {
+    if (base.includes('rest_route=')) {
+      const alt = base.replace(/\/?\?rest_route=\/wp\/v2$/,'').replace(/\/$/,'') + '/wp-json/wp/v2';
+      try {
+        const altUrl = `${alt}/posts/${encodeURIComponent(String(id))}?_embed=1${langPart}`;
+        const item = await fetchJson<WpRawPost>(altUrl); base = alt; return item ? normalizePost(item) : undefined;
+      } catch {
+        return undefined;
+      }
+    }
     return undefined;
   }
 }

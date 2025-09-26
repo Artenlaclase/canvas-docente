@@ -19,7 +19,9 @@ export async function onRequest(context: APIContext, next: MiddlewareNext) {
 
     // Only act on blog pages
   // If mounted at root, blog still starts with /blog/
-  if (pathname.startsWith('/blog/')) {
+    if (pathname.startsWith('/blog/')) {
+      const debug = (typeof process !== 'undefined' && process.env && process.env.DEBUG_BLOG) ? true : false;
+      if (debug) console.log('[middleware] blog path hit', { path: pathname, search: url.search });
       // Support common WP query params
       const idParam = url.searchParams.get('id') || url.searchParams.get('p') || url.searchParams.get('page_id');
       const id = idParam && /^\d+$/.test(idParam) ? Number(idParam) : undefined;
@@ -28,12 +30,14 @@ export async function onRequest(context: APIContext, next: MiddlewareNext) {
         // Try resolve canonical slug by ID and redirect to clean URL
         const post = await getWpPostById(id);
         if (post && post.slug) {
+          if (debug) console.log('[middleware] resolved id to slug', { id, slug: post.slug });
           const canonical = `/blog/${encodeURIComponent(post.slug)}`;
           if (pathname !== canonical || url.search) {
             const target = new URL(canonical, url);
             return Response.redirect(target.toString(), 301);
           }
         } else {
+          if (debug) console.log('[middleware] could not resolve id, stripping query');
           // If we can't resolve the post by ID, at least strip the WP param to avoid route issues
           url.searchParams.delete('id');
           url.searchParams.delete('p');

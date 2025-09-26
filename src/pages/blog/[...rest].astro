@@ -1,0 +1,31 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import Header from "../../components/Header.astro";
+import { getWpPostBySlug, getWpPostById } from "../../utils/wp";
+export const prerender = false;
+
+// Fallback catch-all: take last segment as slug
+const rest = Astro.params.rest || '';
+const parts = Array.isArray(rest) ? rest : rest.split('/');
+const last = parts.filter(Boolean).pop();
+const idParam = Astro.url.searchParams.get('id');
+let post;
+if (last) {
+  try { post = await getWpPostBySlug(last); } catch {}
+}
+if (!post && idParam && /^\d+$/.test(idParam)) {
+  try { post = await getWpPostById(Number(idParam)); } catch {}
+}
+if (!post) {
+  return new Response('<h1>Entrada no encontrada (fallback)</h1>', { status: 404, headers: { 'content-type': 'text/html; charset=utf-8' }});
+}
+---
+<BaseLayout title={post.data.title + ' | Blog'}>
+  <Fragment slot="header"><Header /></Fragment>
+  <article class="prose mx-auto max-w-3xl">
+    <h1>{post.data.title}</h1>
+    {post.data.cover ? <img src={post.data.cover} alt={post.data.title} class="w-full rounded" /> : null}
+    <div class="wp-content" set:html={post.contentHtml} />
+    <p class="mt-8 text-center text-sm"><a href={`/blog/${post.slug}`}>Ir a la versión canónica</a></p>
+  </article>
+</BaseLayout>

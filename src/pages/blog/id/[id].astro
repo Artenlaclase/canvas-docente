@@ -1,0 +1,24 @@
+---
+import BaseLayout from "../../../layouts/BaseLayout.astro";
+import Header from "../../../components/Header.astro";
+import { getWpPostById } from "../../../utils/wp";
+export const prerender = false;
+const idParam = Astro.params.id;
+let post = undefined;
+if (idParam && /^\d+$/.test(idParam)) {
+  post = await getWpPostById(Number(idParam));
+}
+if (!post) {
+  return new Response('<h1>No encontrado</h1>', { status: 404, headers: { 'content-type': 'text/html; charset=utf-8' }});
+}
+---
+<BaseLayout title={post.data.title}>
+  <Fragment slot="header"><Header /></Fragment>
+  <article class="prose mx-auto max-w-3xl">
+    <h1>{post.data.title}</h1>
+    {post.data.cover ? <img src={post.data.cover} alt={post.data.title} class="w-full rounded" /> : null}
+    <p class="text-sm text-slate-500">{new Date(post.data.date).toLocaleDateString('es')}</p>
+    <div class="wp-content" set:html={post.contentHtml} />
+    <p class="mt-8 text-center text-sm"><a href={`/blog/${post.slug}`}>Ir al slug canonical</a></p>
+  </article>
+</BaseLayout>

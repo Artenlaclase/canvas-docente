@@ -5,29 +5,12 @@ import BlogCard from "../../../components/BlogCard.astro";
 import BlogPagination from "../../../components/BlogPagination.astro";
 import { getWpBase, listWpPostsPage } from "../../../utils/wp";
 
-export const prerender = true;
+// Desactivamos prerender para evitar fallos de build cuando WP no responde o devuelve HTML
+export const prerender = false;
 
 const PER_PAGE = 9;
 
-export async function getStaticPaths() {
-  const PER_PAGE = 9;
-  const paths: any[] = [];
-  const wpBase = getWpBase();
-  if (wpBase) {
-    try {
-      const { totalPages } = await listWpPostsPage(1, PER_PAGE);
-      if (totalPages > 1) {
-        for (let p = 2; p <= totalPages; p++) {
-          paths.push({ params: { page: String(p) }, props: { pageNum: p, totalPages } });
-        }
-      }
-    } catch (e) {
-      console.error('[Blog pagination] Error consultando WordPress:', e);
-    }
-  }
-
-  return paths;
-}
+// Eliminado getStaticPaths: la paginación se resolverá en tiempo de ejecución (SSR)
 
 const { page } = Astro.params;
 const q = (Astro.url.searchParams.get('q') || '').trim();
