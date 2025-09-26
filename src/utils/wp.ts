@@ -302,6 +302,56 @@ function rewriteContentHtml(html: string, siteRoot?: string, mediaRoot?: string)
     return tag;
   });
 
+  // Accesibilidad y mitigación de CLS: añadir alt, loading, decoding y dimensiones si faltan.
+  out = out.replace(/<img\b[^>]*>/gi, (tag) => {
+    // Extraer src para derivar datos
+    const srcMatch = tag.match(/\ssrc=["']([^"']+)["']/i);
+    const src = srcMatch?.[1];
+    if (!src) return tag; // sin src (probablemente se manejó arriba)
+    let updated = tag;
+
+    // ALT: si no hay alt=, derivar de filename (quitando sufijo -WxH y extensión)
+    if (!/\salt=/.test(updated)) {
+      let alt = '';
+      try {
+        const u = new URL(src, 'https://dummy.local');
+        const file = (u.pathname.split('/').pop() || '').replace(/\.[a-z0-9]+$/i, '');
+        alt = file.replace(/-\d+x\d+$/,'') // quitar sufijo tamaño
+                  .replace(/[._-]+/g, ' ')   // separadores a espacios
+                  .replace(/\s+/g, ' ')      // espacios múltiples
+                  .trim();
+        if (alt) alt = alt.charAt(0).toUpperCase() + alt.slice(1);
+      } catch {}
+      if (!alt) alt = 'Imagen del artículo';
+      updated = updated.replace(/<img/i, `<img alt="${alt}"`);
+    }
+
+    // loading="lazy" salvo que tenga explicitamente loading
+    if (!/\sloading=/.test(updated)) {
+      updated = updated.replace(/<img/i, '<img loading="lazy"');
+    }
+    // decoding="async"
+    if (!/\sdecoding=/.test(updated)) {
+      updated = updated.replace(/<img/i, '<img decoding="async"');
+    }
+
+    // width/height: si faltan ambos y el filename contiene -WxH
+    const hasWidth = /\swidth=/.test(updated);
+    const hasHeight = /\sheight=/.test(updated);
+    if (!hasWidth || !hasHeight) {
+      const sizeMatch = src.match(/-([0-9]{2,5})x([0-9]{2,5})(\.[a-z]{2,5})(?:$|[?&#])/i);
+      if (sizeMatch) {
+        const w = sizeMatch[1];
+        const h = sizeMatch[2];
+        if (w && h) {
+          if (!hasWidth) updated = updated.replace(/<img/i, `<img width="${w}"`);
+          if (!hasHeight) updated = updated.replace(/<img/i, `<img height="${h}"`);
+        }
+      }
+    }
+    return updated;
+  });
+
   return out;
 }
 

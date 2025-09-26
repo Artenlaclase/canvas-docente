@@ -98,24 +98,24 @@ function resolveCoverPath(path: string | undefined): string | undefined {
           const m = wpPost!.contentHtml?.match(/<img[^>]+src=["']([^"']+)["']/i); return m ? m[1] : undefined;
         })();
         const finalCover = cover || '/placeholder-cover.svg';
+        // Derivar width/height del patrón -WxH si existe para reducir CLS
+        let width: string | undefined; let height: string | undefined;
+        const sizeMatch = finalCover.match(/-([0-9]{2,5})x([0-9]{2,5})(\.[a-z]{2,5})(?:$|[?&#])/i);
+        if (sizeMatch) { width = sizeMatch[1]; height = sizeMatch[2]; }
+        const baseProps = {
+          id: 'post-cover',
+          src: finalCover,
+          loading: 'lazy',
+          decoding: 'async',
+          class: 'w-full aspect-[16/9] object-cover rounded-lg',
+          'data-candidates': JSON.stringify(wpPost!.data.candidateCovers || []),
+          width,
+          height,
+        } as any;
         return cover ? (
-          <img
-            id="post-cover"
-            src={finalCover}
-            alt={wpPost!.data.title}
-            loading="lazy"
-            class="w-full aspect-[16/9] object-cover rounded-lg"
-            data-candidates={JSON.stringify(wpPost!.data.candidateCovers || [])}
-          />
+          <img {...baseProps} alt={wpPost!.data.title} />
         ) : (
-          <img
-            id="post-cover"
-            src={finalCover}
-            alt="Sin imagen"
-            loading="lazy"
-            class="w-full aspect-[16/9] object-cover rounded-lg opacity-80"
-            data-candidates={JSON.stringify(wpPost!.data.candidateCovers || [])}
-          />
+          <img {...baseProps} alt="Sin imagen" class={baseProps.class + ' opacity-80'} />
         );
       })()
     ) : (
@@ -126,15 +126,22 @@ function resolveCoverPath(path: string | undefined): string | undefined {
           console.warn(`[Blog post] No se pudo resolver la portada local: ${coverPath}. Asegúrate de que exista en src/assets/images y usa una ruta relativa, por ejemplo ../../assets/images/...`);
         }
         const finalSrc = (resolvedUrl || coverPath || '') + '';
-        return coverPath ? (
+        if (!coverPath) return null;
+        let width: string | undefined; let height: string | undefined;
+        const sizeMatch = finalSrc.match(/-([0-9]{2,5})x([0-9]{2,5})(\.[a-z]{2,5})(?:$|[?&#])/i);
+        if (sizeMatch) { width = sizeMatch[1]; height = sizeMatch[2]; }
+        return (
           <img
             id="post-cover"
             src={finalSrc}
             alt={localPost.data.title}
             loading="lazy"
+            decoding="async"
+            width={width}
+            height={height}
             class="w-full aspect-[16/9] object-cover rounded-lg"
           />
-        ) : null;
+        );
       })()
     )}
     <p class="text-sm text-slate-500">
