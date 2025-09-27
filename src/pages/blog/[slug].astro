@@ -1,6 +1,7 @@
 ---
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import Header from "../../components/Header.astro";
+import BlogCard from "../../components/BlogCard.astro";
 import { getCollection } from 'astro:content';
 import { getWpBase, getWpPostBySlug, getWpPostById, type NormalizedPost } from "../../utils/wp";
 
@@ -69,6 +70,38 @@ if (!wpPost && !localPost) {
   );
 }
 const isWP = !!wpPost;
+// Obtener categorías/tags del post actual (normalizados a strings) para usar en relacionados
+function extractCategories(post: any): string[] {
+  if (!post) return [];
+  // WordPress normalizado: post.data.categories -> [{name}]
+  if (post.data && Array.isArray(post.data.categories)) {
+    return post.data.categories.map((c: any) => c?.name || c?.title || '').filter(Boolean);
+  }
+  // Contenido local: usar tags si existen
+  if (post.data && Array.isArray(post.data.tags)) return post.data.tags.filter(Boolean);
+  return [];
+}
+const currentCats = isWP ? extractCategories(wpPost) : extractCategories(localPost);
+
+// Buscar relacionados solo si tenemos base WP (para consistencia) o si es local buscar en colección
+let related: any[] = [];
+try {
+  if (isWP) {
+    // Descargamos un set razonable y filtramos localmente (evitar múltiples llamadas por categoría)
+    const all = await getCollection('blog'); // local fallback collection (puede estar vacía)
+    // all quizás no contiene WP; intentar complementar con listWpPosts si hay base
+    // Import dinámico para evitar circularidad
+    const { listWpPosts } = await import('../../utils/wp');
+    const wpPool = await listWpPosts(40); // tamaño razonable
+    const pool = [...wpPool];
+    related = pool.filter(p => p.slug !== wpPost!.slug && extractCategories(p).some(cat => currentCats.includes(cat))).slice(0,4);
+  } else if (localPost) {
+    const all = await getCollection('blog');
+    related = all.filter(p => p.slug !== localPost.slug && extractCategories(p).some(cat => currentCats.includes(cat))).slice(0,4);
+  }
+} catch (e) {
+  if (import.meta.env.DEV) console.warn('[RelatedPosts] Error obteniendo relacionados', e);
+}
 let Content: any = null;
 if (!isWP && localPost) {
   const rendered = await localPost.render();
@@ -110,7 +143,9 @@ function resolveCoverPath(path: string | undefined): string | undefined {
 ---
 <BaseLayout title={`${(isWP ? wpPost!.data.title : localPost.data.title)} | Blog`}>
   <Fragment slot="header"><Header /></Fragment>
-  <article class="prose prose-lg md:prose-xl mx-auto max-w-4xl">
+  <div class="mx-auto max-w-7xl px-4 lg:px-8">
+    <div class="grid grid-cols-1 lg:grid-cols-4 gap-10">
+      <article class="prose prose-lg md:prose-xl lg:col-span-3">
     <h1>{isWP ? wpPost!.data.title : localPost.data.title}</h1>
     {isWP ? (
       (() => {
@@ -185,7 +220,22 @@ function resolveCoverPath(path: string | undefined): string | undefined {
     ) : (
       <div class="wp-content"><Content /></div>
     )}
-  </article>
+      </article>
+      <aside class="lg:col-span-1 mt-10 lg:mt-0 space-y-4 lg:sticky lg:top-24 self-start">
+  <a href="/notas" class="inline-flex items-center gap-2 text-sm font-medium text-sky-600 hover:text-sky-700 border border-sky-200 hover:border-sky-300 rounded-md px-3 py-1.5 transition w-full justify-center">← Ir a Notas</a>
+        {related.length > 0 ? (
+          <div class="space-y-3">
+            <h2 class="text-lg font-semibold">Relacionados</h2>
+            <div class="space-y-4 max-h-[calc(100vh-12rem)] overflow-auto pr-1" aria-label="Entradas relacionadas">
+              {related.map(r => <BlogCard post={r} />)}
+            </div>
+          </div>
+        ) : (
+          <p class="text-sm text-slate-500">No hay entradas relacionadas.</p>
+        )}
+      </aside>
+    </div>
+  </div>
   {/* Lightbox modal for post images */}
   <div id="post-lightbox" class="fixed inset-0 z-[9999] hidden" aria-hidden="true">
     <div id="post-backdrop" class="absolute inset-0 bg-black/70"></div>

@@ -1,0 +1,84 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import Header from "../../components/Header.astro";
+import BlogCard from "../../components/BlogCard.astro";
+import { getCollection } from 'astro:content';
+import { getWpBase, getWpPostBySlug, getWpPostById, type NormalizedPost } from "../../utils/wp";
+export const prerender = false;
+const { slug } = Astro.params;
+if (typeof process !== 'undefined' && process.env && process.env.DEBUG_BLOG) {
+  console.log('[route:/notas/[slug]] incoming', { slug, url: Astro.url.toString() });
+}
+const idParam = Astro.url.searchParams.get('id');
+let wpPost: NormalizedPost | undefined;
+let localPost: any | undefined;
+const wpBase = getWpBase();
+if (wpBase && idParam && /^\d+$/.test(idParam)) {
+  try { wpPost = await getWpPostById(Number(idParam)); } catch {}
+}
+if (wpBase && slug && !wpPost) {
+  try { wpPost = await getWpPostBySlug(slug); } catch {}
+}
+if (wpPost && slug && wpPost.slug && slug !== wpPost.slug) {
+  const canonical = `/notas/${encodeURIComponent(wpPost.slug)}?id=${encodeURIComponent(String(wpPost.id || ''))}`;
+  return Astro.redirect ? Astro.redirect(canonical, 301) : new Response('', { status:301, headers:{Location:canonical} });
+}
+if (!wpPost && slug) {
+  const all = await getCollection('blog');
+  localPost = all.find(p => p.slug === slug);
+}
+if (!wpPost && !localPost) {
+  return Astro.redirect ? Astro.redirect('/notas', 302) : new Response('<!doctype html><title>No encontrado</title>', { status:404 });
+}
+const isWP = !!wpPost;
+function extractCategories(post: any): string[]{
+  if(!post) return []; if(post.data && Array.isArray(post.data.categories)) return post.data.categories.map((c:any)=>c?.name||c?.title||'').filter(Boolean); if(post.data && Array.isArray(post.data.tags)) return post.data.tags.filter(Boolean); return [];
+}
+const currentCats = isWP ? extractCategories(wpPost) : extractCategories(localPost);
+let related: any[] = [];
+try {
+  if (isWP) {
+    const { listWpPosts } = await import('../../utils/wp');
+    const wpPool = await listWpPosts(40);
+    related = wpPool.filter(p => p.slug !== wpPost!.slug && extractCategories(p).some(cat => currentCats.includes(cat))).slice(0,4);
+  } else if (localPost) {
+    const all = await getCollection('blog');
+    related = all.filter(p => p.slug !== localPost.slug && extractCategories(p).some(cat => currentCats.includes(cat))).slice(0,4);
+  }
+} catch {}
+let Content: any = null;
+if (!isWP && localPost) { const rendered = await localPost.render(); Content = rendered.Content; }
+const assets = import.meta.glob('../../assets/images/**/*', { eager: true, import: 'default' }) as Record<string, any>;
+function resolveCoverPath(path: string | undefined): string | undefined {
+  if (!path) return undefined;
+  if (path.startsWith('/src/')) { const key = '../..' + path.replace('/src',''); const hit = assets[key]; if(hit) return typeof hit==='string'?hit:hit?.src; }
+  const idx = path.indexOf('assets/images/');
+  if (idx !== -1) { const tail = path.slice(idx); const key = '../..' + '/' + tail.replace(/^assets\//,'assets/'); const hit = assets[key]; if(hit) return typeof hit==='string'?hit:hit?.src; }
+  const file = path.split('/').pop(); if(file){ const mk = Object.keys(assets).find(k=>k.endsWith('/'+file)); if(mk){ const hit=assets[mk]; return typeof hit==='string'?hit:hit?.src; } }
+  return undefined;
+}
+---
+<BaseLayout title={`${(isWP ? wpPost!.data.title : localPost.data.title)} | Notas`}>
+  <Fragment slot="header"><Header /></Fragment>
+  <div class="mx-auto max-w-7xl px-4 lg:px-8">
+    <div class="grid grid-cols-1 lg:grid-cols-4 gap-10">
+      <article class="prose prose-lg md:prose-xl lg:col-span-3">
+        <h1>{isWP ? wpPost!.data.title : localPost.data.title}</h1>
+        {isWP ? (()=>{ const cover=wpPost!.data.cover || (()=>{ const m=wpPost!.contentHtml?.match(/<img[^>]+src=["']([^"']+)["']/i); return m?m[1]:undefined;})(); const finalCover=cover||'/placeholder-cover.svg'; let width: string|undefined; let height: string|undefined; const sizeMatch=finalCover.match(/-([0-9]{2,5})x([0-9]{2,5})(\.[a-z]{2,5})(?:$|[?&#])/i); if(sizeMatch){ width=sizeMatch[1]; height=sizeMatch[2]; } const candidates:(string[])=(wpPost!.data.candidateCovers||[]).slice().reverse(); const entries=candidates.map(u=>{ const m=u.match(/-([0-9]{2,5})x([0-9]{2,5})(\.[a-z]{2,5})(?:$|[?&#])/i); return m?`${u} ${m[1]}w`:u; }); const srcset=entries.length?entries.join(', '):undefined; const sizes=srcset?'(max-width: 640px) 100vw, (max-width: 1024px) 90vw, 1024px':undefined; const props:any={ id:'post-cover', src:finalCover, loading:'lazy', decoding:'async', class:'w-full aspect-[16/9] object-cover rounded-lg', 'data-candidates':JSON.stringify(wpPost!.data.candidateCovers||[]), width, height, srcset, sizes }; return <img {...props} alt={wpPost!.data.title || 'Portada'} />; })() : (()=>{ const coverPath=localPost.data.cover as string|undefined; const resolvedUrl=resolveCoverPath(coverPath); const finalSrc=(resolvedUrl||coverPath||'')+''; if(!coverPath) return null; let width: string|undefined; let height: string|undefined; const sm=finalSrc.match(/-([0-9]{2,5})x([0-9]{2,5})(\.[a-z]{2,5})(?:$|[?&#])/i); if(sm){ width=sm[1]; height=sm[2]; } return <img id="post-cover" src={finalSrc} alt={localPost.data.title} loading="lazy" decoding="async" width={width} height={height} class="w-full aspect-[16/9] object-cover rounded-lg" />; })()}
+        <p class="text-sm text-slate-500">{isWP ? (wpPost!.data.author ? `Por ${wpPost!.data.author}` : new Date(wpPost!.data.date).toLocaleDateString('es')) : new Date(localPost.data.date).toLocaleDateString('es')}</p>
+        {isWP ? <div class="wp-content" set:html={wpPost!.contentHtml} /> : <div class="wp-content"><Content /></div>}
+      </article>
+      <aside class="lg:col-span-1 mt-10 lg:mt-0 space-y-4 lg:sticky lg:top-24 self-start">
+        <a href="/notas" class="inline-flex items-center gap-2 text-sm font-medium text-sky-600 hover:text-sky-700 border border-sky-200 hover:border-sky-300 rounded-md px-3 py-1.5 transition w-full justify-center">← Volver a notas</a>
+        {related.length>0 ? (
+          <div class="space-y-3">
+            <h2 class="text-lg font-semibold">Relacionados</h2>
+            <div class="space-y-4 max-h-[calc(100vh-12rem)] overflow-auto pr-1" aria-label="Entradas relacionadas">
+              {related.map(r => <BlogCard post={r} />)}
+            </div>
+          </div>
+        ) : <p class="text-sm text-slate-500">No hay entradas relacionadas.</p>}
+      </aside>
+    </div>
+  </div>
+</BaseLayout>

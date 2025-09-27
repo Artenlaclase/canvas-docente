@@ -148,7 +148,7 @@ const getCats = (post: any) => {
       function initSearchNav(){
         const input = document.getElementById('blog-search');
         if (!input) return;
-        const base = '/blog';
+        const base = '/blog'; // Ruta antigua; nueva sección disponible en /notas
         function go(){
           const v = input.value.trim();
           const url = v ? `${base}?q=${encodeURIComponent(v)}` : base;
@@ -161,4 +161,5 @@ const getCats = (post: any) => {
     })();
   </script>
   <BlogPagination current={current} totalPages={totalPages} base={`/blog${q ? `?q=${encodeURIComponent(q)}` : ''}`} />
+  <div class="mt-10 text-center text-xs text-slate-500">La nueva ruta del blog es <a href="/notas" class="underline text-sky-600">/notas</a>. Actualiza tus marcadores.</div>
 </BaseLayout>

@@ -19,10 +19,6 @@ if (!post) {
     {post.data.cover ? <img src={post.data.cover} alt={post.data.title} class="w-full rounded" /> : null}
     <p class="text-sm text-slate-500">{new Date(post.data.date).toLocaleDateString('es')}</p>
     <div class="wp-content" set:html={post.contentHtml} />
-    <p class="mt-8 text-center text-sm space-x-4">
-      <a href={`/blog/${post.slug}`}>Versión /blog</a>
-      <span class="text-slate-400">|</span>
-      <a href={`/notas/${post.slug}`}>Nueva ruta /notas</a>
-    </p>
+    <p class="mt-8 text-center text-sm"><a href={`/notas/${post.slug}`}>Ir al slug canonical</a></p>
   </article>
 </BaseLayout>

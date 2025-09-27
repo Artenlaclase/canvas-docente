@@ -1,5 +1,5 @@
 ---
-const { current, totalPages, base = '/blog' } = Astro.props as { current: number; totalPages: number; base?: string };
+const { current, totalPages, base = '/notas' } = Astro.props as { current: number; totalPages: number; base?: string };
 if (!totalPages || totalPages <= 1) {
   return null;
 }

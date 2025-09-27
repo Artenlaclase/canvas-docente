@@ -4,42 +4,34 @@ import Header from "../../../components/Header.astro";
 import BlogCard from "../../../components/BlogCard.astro";
 import BlogPagination from "../../../components/BlogPagination.astro";
 import { getWpBase, listWpPostsPage } from "../../../utils/wp";
-
-// Desactivamos prerender para evitar fallos de build cuando WP no responde o devuelve HTML
 export const prerender = false;
-
 const PER_PAGE = 9;
-
-// Eliminado getStaticPaths: la paginación se resolverá en tiempo de ejecución (SSR)
-
 const { page } = Astro.params;
 const q = (Astro.url.searchParams.get('q') || '').trim();
 const pageNum = Number(page || '1');
-
 let current = pageNum;
 let totalPages = 1;
 let posts: any[] = [];
-
 const wpBase = getWpBase();
 if (!wpBase) {
-  console.warn('[Blog] WP_API_BASE no configurado. Configure la variable en el servidor.');
+  console.warn('[Notas] WP_API_BASE no configurado.');
 } else {
   try {
     const { posts: wpPosts, totalPages: tp } = await listWpPostsPage(pageNum, PER_PAGE, q ? { search: q } : undefined);
     posts = wpPosts;
     totalPages = tp || 1;
   } catch (e) {
-    console.error('[Blog] Error consultando WordPress:', e);
+    console.error('[Notas] Error consultando WordPress:', e);
   }
 }
 ---
-<BaseLayout title={`Blog - Página ${current}${q ? ` - "${q}"` : ''} | Canvas Docente`}>
+<BaseLayout title={`Notas - Página ${current}${q ? ` - "${q}"` : ''} | Canvas Docente`}>
   <Fragment slot="header"><Header /></Fragment>
-  <h1 class="sr-only">Blog</h1>
+  <h1 class="sr-only">Notas</h1>
   <div class="mb-6">
-    <label for="blog-search" class="sr-only">Buscar entradas</label>
+    <label for="notas-search" class="sr-only">Buscar entradas</label>
     <div class="relative max-w-xl">
-      <input id="blog-search" type="search" value={q} placeholder="Buscar por título o categoría..." class="w-full rounded-lg border border-slate-300 pl-10 pr-3 py-2 outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500" />
+      <input id="notas-search" type="search" value={q} placeholder="Buscar por título o categoría..." class="w-full rounded-lg border border-slate-300 pl-10 pr-3 py-2 outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500" />
       <svg class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
     </div>
   </div>
@@ -53,24 +45,21 @@ if (!wpBase) {
       <p class="text-sm">Verifique la conexión con WordPress o intente más tarde.</p>
     </div>
   )}
-  <BlogPagination current={current} totalPages={totalPages} base={`/blog${q ? `?q=${encodeURIComponent(q)}` : ''}`} />
+  <BlogPagination current={current} totalPages={totalPages} base={`/notas${q ? `?q=${encodeURIComponent(q)}` : ''}`} />
   <script>
-    // @ts-nocheck
     (function(){
       function initSearchNav(){
-        const input = document.getElementById('blog-search');
+        const input = document.getElementById('notas-search') as HTMLInputElement | null;
         if (!input) return;
-  const base = '/blog'; // Ruta antigua; nueva sección en /notas
-        let timeout;
+        const base = '/notas';
         function go(){
-          const v = input.value.trim();
+          const v = input!.value.trim();
           const url = v ? `${base}?q=${encodeURIComponent(v)}` : base;
           window.location.href = url;
         }
-        input.addEventListener('keydown', (e)=>{ if (e.key === 'Enter') go(); });
+        input.addEventListener('keydown', (e: KeyboardEvent)=>{ if (e.key === 'Enter') go(); });
       }
-      if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initSearchNav);
-      else initSearchNav();
+      if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initSearchNav); else initSearchNav();
     })();
   </script>
 </BaseLayout>

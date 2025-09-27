@@ -1,0 +1,110 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import Header from "../../components/Header.astro";
+import BlogCard from "../../components/BlogCard.astro";
+import FeaturedBlogCard from "../../components/FeaturedBlogCard.astro";
+import BlogPagination from "../../components/BlogPagination.astro";
+import { getWpBase, listWpPostsPage } from "../../utils/wp";
+export const prerender = false;
+
+const PER_PAGE = 9;
+const q = (Astro.url.searchParams.get('q') || '').trim();
+let posts: any[] = [];
+let totalPages = 1;
+const current = 1;
+const wpBase = getWpBase();
+if (wpBase) {
+  try {
+    const { posts: wpPosts, totalPages: tp } = await listWpPostsPage(1, PER_PAGE, q ? { search: q } : undefined);
+    posts = wpPosts; totalPages = tp || 1;
+  } catch (err) {
+    console.error('[Notas] Error consultando WordPress:', err);
+  }
+} else {
+  console.warn('[Notas] WP_API_BASE no configurado.');
+}
+const getCats = (post: any) => {
+  const d = (post && post.data) || {};
+  let cats: any = d.categories ?? d.category ?? d.tags ?? d.tag ?? [];
+  if (typeof cats === 'string') cats = [cats];
+  if (!Array.isArray(cats)) cats = [];
+  cats = cats.map((c: any) => typeof c === 'string' ? c : (c?.name || c?.title || ''));
+  return cats.filter(Boolean).join(' ');
+};
+---
+<BaseLayout title="Notas | Canvas Docente">
+  <Fragment slot="header"><Header /></Fragment>
+  <h1 class="sr-only">Notas</h1>
+  <div class="mb-6">
+    <label for="notas-search" class="sr-only">Buscar entradas</label>
+    <div class="relative max-w-xl">
+      <input id="notas-search" type="search" value={q} placeholder="Buscar por título o categoría..." class="w-full rounded-lg border border-slate-300 pl-10 pr-3 py-2 outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500" />
+      <svg class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    </div>
+  </div>
+  {posts.length > 0 ? (
+    <div id="notas-grid" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div class="lg:col-span-2 space-y-6">
+        <div class="nota-item" data-title={(posts[0].data.title || '').toLowerCase()} data-cats={getCats(posts[0]).toLowerCase()}>
+          <FeaturedBlogCard post={posts[0]} />
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {posts.slice(1, 3).map((post) => <div class="nota-item" data-title={(post.data.title || '').toLowerCase()} data-cats={getCats(post).toLowerCase()}><BlogCard post={post} /></div>)}
+        </div>
+      </div>
+      <aside class="lg:col-span-1">
+        <div class="flex items-center justify-between mb-2">
+          <h2 class="text-lg font-semibold">Más entradas</h2>
+          <div class="flex items-center gap-2">
+            <button id="side-prev" class="h-8 w-8 grid place-items-center rounded-md border border-slate-300 text-slate-700 hover:bg-slate-50" aria-label="Anteriores">‹</button>
+            <button id="side-next" class="h-8 w-8 grid place-items-center rounded-md border border-slate-300 text-slate-700 hover:bg-slate-50" aria-label="Siguientes">›</button>
+          </div>
+        </div>
+        <div id="side-list" class="space-y-4">
+          {posts.slice(3).map((post, idx) => (
+            <div class={`sidebar-item nota-item ${idx < 4 ? '' : 'hidden'}`} data-index={idx} data-title={(post.data.title || '').toLowerCase()} data-cats={getCats(post).toLowerCase()}>
+              <BlogCard post={post} />
+            </div>
+          ))}
+        </div>
+      </aside>
+    </div>
+  ) : (
+    <div class="text-center text-slate-600 my-16 space-y-2">
+      <p class="font-medium">No hay entradas disponibles.</p>
+      {wpBase ? (
+        <p class="text-sm">La API de WordPress no devolvió datos o produjo un error.</p>
+      ) : (
+        <p class="text-sm">Falta configurar <code>WP_API_BASE</code>.</p>
+      )}
+    </div>
+  )}
+  <style is:inline>
+    .hidden-by-search { display: none !important; }
+  </style>
+  <script>
+    // @ts-nocheck
+    (function(){
+      function initSidebarPager(){
+        const list = document.getElementById('side-list'); if(!list) return;
+        const items = Array.from(list.querySelectorAll('.sidebar-item'));
+        const prevBtn = document.getElementById('side-prev');
+        const nextBtn = document.getElementById('side-next');
+        const pageSize = 4; let page = 0;
+        const maxPage = Math.max(0, Math.ceil(items.length / pageSize) - 1);
+        function render(){ items.forEach((el,i)=>{const s=page*pageSize; const e=s+pageSize-1; el.classList.toggle('hidden', !(i>=s && i<=e));}); if(prevBtn) prevBtn.toggleAttribute('disabled', page===0); if(nextBtn) nextBtn.toggleAttribute('disabled', page>=maxPage); }
+        if(prevBtn) prevBtn.addEventListener('click', ()=>{ if(page>0){page--;render();}});
+        if(nextBtn) nextBtn.addEventListener('click', ()=>{ if(page<maxPage){page++;render();}});
+        render();
+      }
+      function initSearch(){
+        const input=document.getElementById('notas-search'); const grid=document.getElementById('notas-grid'); if(!input||!grid) return;
+        const items=Array.from(grid.querySelectorAll('.nota-item'));
+        input.addEventListener('input',()=>{const q=input.value.trim().toLowerCase(); if(!q){items.forEach(el=>el.classList.remove('hidden-by-search'));} else {items.forEach(el=>{const t=el.getAttribute('data-title')||''; const c=el.getAttribute('data-cats')||''; el.classList.toggle('hidden-by-search', !(t.includes(q)||c.includes(q)));});}});
+      }
+      function initSearchNav(){ const input=document.getElementById('notas-search'); if(!input) return; const base='/notas'; function go(){const v=input.value.trim(); const url=v?`${base}?q=${encodeURIComponent(v)}`:base; if(window.location.pathname+window.location.search!==url) window.location.href=url;} input.addEventListener('keydown',(e)=>{ if(e.key==='Enter') go(); }); }
+      if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded', ()=>{initSidebarPager(); initSearch(); initSearchNav();});} else {initSidebarPager(); initSearch(); initSearchNav();}
+    })();
+  </script>
+  <BlogPagination current={current} totalPages={totalPages} base={`/notas${q ? `?q=${encodeURIComponent(q)}` : ''}`} />
+</BaseLayout>
