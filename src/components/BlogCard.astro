@@ -58,7 +58,7 @@ if (!displayCover) {
   displayCover = '/placeholder-cover.svg';
 }
 ---
-<a href={`/notas/${encodeURIComponent(post.slug)}${post.id ? `?id=${encodeURIComponent(post.id)}` : ''}`} class="group block rounded-lg overflow-hidden border border-slate-200 hover:shadow-md transition">
+<a href={`/notas/${encodeURIComponent(post.slug)}`} class="group block rounded-lg overflow-hidden border border-slate-200 hover:shadow-md transition">
   {displayCover ? (() => {
     // Si el post trae candidateCovers usamos srcset responsivo
     const candidates: string[] = (post.data?.candidateCovers || []).slice().reverse();

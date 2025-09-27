@@ -47,7 +47,7 @@ const fallbackHtmlImg = !coverPath && !isWpPost ? firstImageFromHtml(post.conten
 let displayCover = isWpPost ? (coverPath || undefined) : (resolved || coverPath || fallbackHtmlImg);
 if (!displayCover) displayCover = '/placeholder-cover.svg';
 ---
-<a href={`/notas/${encodeURIComponent(post.slug)}${post.id ? `?id=${encodeURIComponent(post.id)}` : ''}`} class="group block rounded-xl overflow-hidden border border-slate-200 hover:shadow-lg transition bg-white">
+<a href={`/notas/${encodeURIComponent(post.slug)}`} class="group block rounded-xl overflow-hidden border border-slate-200 hover:shadow-lg transition bg-white">
   {displayCover ? (() => {
     const candidates: string[] = (post.data?.candidateCovers || []).slice().reverse();
     const entries = candidates.map((u: string) => {

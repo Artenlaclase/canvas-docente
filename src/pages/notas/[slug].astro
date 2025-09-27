@@ -20,7 +20,7 @@ if (wpBase && slug && !wpPost) {
   try { wpPost = await getWpPostBySlug(slug); } catch {}
 }
 if (wpPost && slug && wpPost.slug && slug !== wpPost.slug) {
-  const canonical = `/notas/${encodeURIComponent(wpPost.slug)}?id=${encodeURIComponent(String(wpPost.id || ''))}`;
+  const canonical = `/notas/${encodeURIComponent(wpPost.slug)}`; // sin ?id
   return Astro.redirect ? Astro.redirect(canonical, 301) : new Response('', { status:301, headers:{Location:canonical} });
 }
 if (!wpPost && slug) {

@@ -43,7 +43,7 @@ if (wpBase && slug && !wpPost) {
 
 // Si lo obtuvimos por ID pero el slug en la URL no coincide con el slug real del post, redirigir a canónico
 if (wpPost && slug && wpPost.slug && slug !== wpPost.slug) {
-  const canonical = `/blog/${encodeURIComponent(wpPost.slug)}?id=${encodeURIComponent(String(wpPost.id || ''))}`;
+  const canonical = `/blog/${encodeURIComponent(wpPost.slug)}`; // canonical limpio sin ?id
   if (process?.env?.DEBUG_BLOG) {
     console.log('[Blog SSR] Redirigiendo a slug canónico', { from: slug, to: wpPost.slug, canonical });
   }
