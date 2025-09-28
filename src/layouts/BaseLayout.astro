@@ -1,7 +1,26 @@
 ---
 import "../styles/global.css";
 import Footer from "../components/Footer.astro";
-const { title = 'Canvas Docente', description = '20 años de artes visuales', lang = 'es' } = Astro.props;
+const { title = 'Canvas Docente', description = '20 años de artes visuales', lang = 'es', image, url, noIndex = false } = Astro.props as {
+  title?: string;
+  description?: string;
+  lang?: string;
+  image?: string;
+  url?: string;
+  noIndex?: boolean;
+};
+// Helper: build absolute URL if user passed relative path
+function abs(u?: string) {
+  if(!u) return undefined;
+  try {
+    if (/^https?:\/\//i.test(u)) return u;
+    const base = (Astro.site ? Astro.site.toString() : (Astro.url ? Astro.url.origin : '')) || '';
+    if (!base) return u; // fallback relative if cannot resolve
+    return new URL(u, base).toString();
+  } catch { return u; }
+}
+const ogImage = abs(image);
+const canonicalUrl = abs(url || Astro.url?.pathname || '/');
 ---
 <html lang={lang} class="h-full">
   <head>
@@ -10,6 +29,19 @@ const { title = 'Canvas Docente', description = '20 años de artes visuales', la
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="description" content={description} />
     <meta name="generator" content={Astro.generator} />
+  {noIndex ? <meta name="robots" content="noindex,follow" /> : null}
+  <meta property="og:type" content="article" />
+  <meta property="og:site_name" content="Canvas Docente" />
+  <meta property="og:title" content={title} />
+  <meta property="og:description" content={description} />
+  {canonicalUrl && <meta property="og:url" content={canonicalUrl} />}
+  {ogImage && <meta property="og:image" content={ogImage} />}
+  {ogImage && <meta property="og:image:alt" content={title} />}
+  <meta name="twitter:card" content={ogImage ? 'summary_large_image' : 'summary'} />
+  <meta name="twitter:title" content={title} />
+  <meta name="twitter:description" content={description} />
+  {ogImage && <meta name="twitter:image" content={ogImage} />}
+  {canonicalUrl && <link rel="canonical" href={canonicalUrl} />}
     <title>{title}</title>
   </head>
   <body class="min-h-screen bg-white text-slate-900 antialiased flex flex-col">
