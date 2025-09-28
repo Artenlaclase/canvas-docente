@@ -17,27 +17,31 @@ let wpPost: NormalizedPost | undefined;
 let localPost: any | undefined;
 const wpBase = getWpBase();
 
-// NUEVO: si hay idParam, intentamos primero por ID (más determinista)
-if (wpBase && idParam && /^\d+$/.test(idParam)) {
-  try {
-    wpPost = await getWpPostById(Number(idParam));
-    if (wpPost && process?.env?.DEBUG_BLOG) {
-      console.log('[Blog SSR] Resuelto por ID primero', { requestedId: idParam, resolvedSlug: wpPost.slug });
-    }
-  } catch (e) {
-    console.warn('[Blog SSR] Error al obtener post WP por id (orden primero):', idParam, e);
-  }
-}
-
-// Si no lo obtuvimos por ID o no había idParam, intentar por slug
-if (wpBase && slug && !wpPost) {
+// ORDEN ACTUAL (fase previa a redirección definitiva a /notas):
+// 1. Intentar resolver por slug exacto (canónico preferido)
+// 2. Si no existe y viene idParam numérico, intentar por ID como fallback
+if (wpBase && slug) {
   try {
     wpPost = await getWpPostBySlug(slug);
     if (wpPost && process?.env?.DEBUG_BLOG) {
-      console.log('[Blog SSR] Resuelto por slug', { slug });
+      console.log('[Blog SSR] Resuelto por slug (primero)', { slug });
     }
   } catch (e) {
-    console.warn('[Blog SSR] Error al obtener post WP por slug:', slug, e);
+    console.warn('[Blog SSR] Error al obtener post WP por slug (intento primario):', slug, e);
+  }
+}
+// Fallback por ID (antes era primario; ahora solo si no encontramos por slug)
+if (!wpPost && wpBase && idParam && /^\d+$/.test(idParam)) {
+  try {
+    const byId = await getWpPostById(Number(idParam));
+    if (byId) {
+      wpPost = byId;
+      if (process?.env?.DEBUG_BLOG) {
+        console.log('[Blog SSR] Resuelto por ID (fallback)', { requestedId: idParam, resolvedSlug: wpPost.slug });
+      }
+    }
+  } catch (e) {
+    console.warn('[Blog SSR] Error al obtener post WP por id (fallback):', idParam, e);
   }
 }
 
