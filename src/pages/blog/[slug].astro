@@ -161,6 +161,9 @@ function resolveCoverPath(path: string | undefined): string | undefined {
   description={isWP ? (wpPost!.data.excerpt || wpPost!.data.title) : (localPost.data.excerpt || localPost.data.title)}
   image={(Astro as any).locals?._ogImage}
   url={`/blog/${encodeURIComponent(isWP ? wpPost!.slug : localPost.slug)}`}
+  publishedTime={isWP ? wpPost!.data.date : (localPost.data.date as string)}
+  modifiedTime={isWP ? (wpPost!.data.modified || wpPost!.data.date) : (localPost.data.updated || localPost.data.date)}
+  tags={(isWP ? (wpPost!.data.categories || []).map(c=>c.name).filter(Boolean) : (localPost.data.tags || [])).slice(0,12)}
 >
   <Fragment slot="header"><Header /></Fragment>
   <div class="mx-auto max-w-7xl px-4 lg:px-8">

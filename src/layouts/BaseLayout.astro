@@ -1,13 +1,16 @@
 ---
 import "../styles/global.css";
 import Footer from "../components/Footer.astro";
-const { title = 'Canvas Docente', description = '20 años de artes visuales', lang = 'es', image, url, noIndex = false } = Astro.props as {
+const { title = 'Canvas Docente', description = '20 años de artes visuales', lang = 'es', image, url, noIndex = false, publishedTime, modifiedTime, tags } = Astro.props as {
   title?: string;
   description?: string;
   lang?: string;
   image?: string;
   url?: string;
   noIndex?: boolean;
+  publishedTime?: string; // ISO string
+  modifiedTime?: string;  // ISO string
+  tags?: string[];        // Article tags (categorías o etiquetas)
 };
 // Helper: build absolute URL if user passed relative path
 function abs(u?: string) {
@@ -31,6 +34,9 @@ const canonicalUrl = abs(url || Astro.url?.pathname || '/');
     <meta name="generator" content={Astro.generator} />
   {noIndex ? <meta name="robots" content="noindex,follow" /> : null}
   <meta property="og:type" content="article" />
+  {publishedTime && <meta property="article:published_time" content={publishedTime} />}
+  {modifiedTime && <meta property="article:modified_time" content={modifiedTime} />}
+  {Array.isArray(tags) && tags.slice(0,12).map(t => t && <meta property="article:tag" content={t} />)}
   <meta property="og:site_name" content="Canvas Docente" />
   <meta property="og:title" content={title} />
   <meta property="og:description" content={description} />
