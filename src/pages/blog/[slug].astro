@@ -393,81 +393,81 @@ function resolveCoverPath(path: string | undefined): string | undefined {
 
       function initPostLightbox(){
         const container = document.querySelector('article .wp-content');
-        if (!container) return;
-        /** @type {HTMLImageElement[]} */
-        const imgs = Array.from(container.querySelectorAll('img'))
-          .filter(img => img && (img.currentSrc || img.src));
-        if (imgs.length === 0) return;
+        if (!container) { console.debug('[Lightbox] No container found'); return; }
 
-        // Make images look clickable
-        imgs.forEach(img => { if (!img.style.cursor) img.style.cursor = 'zoom-in'; });
-
-        // Prepare (src, caption) list
-        const items = imgs.map((img) => ({
-          src: img.currentSrc || img.src,
-          caption: img.getAttribute('alt') || ''
-        }));
-
-        const lightbox = document.getElementById('post-lightbox');
-        if (!lightbox) return;
-        const scope = lightbox;
-        const imgEl = scope.querySelector('#post-lightboxImage');
-        const closeBtn = scope.querySelector('#post-closeBtn');
-        const nextBtn = scope.querySelector('#post-nextBtn');
-        const prevBtn = scope.querySelector('#post-prevBtn');
-        const backdrop = scope.querySelector('#post-backdrop');
-        const counter = scope.querySelector('#post-counter');
-        const captionEl = scope.querySelector('#post-caption');
-
-        let current = 0;
-        let scale = 1, offsetX = 0, offsetY = 0, isPanning = false, startX = 0, startY = 0;
-        function applyTransform(){
-          if (!imgEl) return;
-          imgEl.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${scale})`;
-          imgEl.style.transition = 'transform 120ms ease-out';
-          imgEl.style.cursor = scale > 1 ? 'grab' : 'default';
+        function collectImages(){
+          /** @type {HTMLImageElement[]} */
+          const imgs = Array.from(container.querySelectorAll('img'))
+            .filter(img => img && (img.currentSrc || img.src));
+          return imgs;
         }
-        function resetZoom(){ scale = 1; offsetX = 0; offsetY = 0; applyTransform(); }
-        function update(){
-          if (!imgEl) return;
-          imgEl.setAttribute('src', items[current].src);
-          if (counter) counter.textContent = `${current + 1} / ${items.length}`;
-          if (captionEl) captionEl.textContent = items[current].caption || '';
-          resetZoom();
+        let imgs = collectImages();
+        if (imgs.length === 0) {
+          // Retry shortly in case images are injected/loaded async
+          setTimeout(() => { imgs = collectImages(); if (imgs.length) setup(); }, 250);
+        } else {
+          setup();
         }
-        function openAt(idx){ current = idx; update(); scope.classList.remove('hidden'); scope.setAttribute('aria-hidden','false'); scope.style.display='block'; document.body.style.overflow='hidden'; }
-        function close(){ scope.classList.add('hidden'); scope.setAttribute('aria-hidden','true'); scope.style.display='none'; document.body.style.overflow=''; }
-        function next(){ current = (current + 1) % items.length; update(); }
-        function prev(){ current = (current - 1 + items.length) % items.length; update(); }
 
-        // Delegate clicks (also handle anchors wrapping img)
-        container.addEventListener('click', (e) => {
-          const target = e.target;
-          const img = target && target.closest ? target.closest('img') : null;
-          if (!img) return;
-          const index = imgs.indexOf(img);
-          if (index >= 0) {
-            e.preventDefault();
-            openAt(index);
-          }
-        });
+        function setup(){
+          if (!imgs.length) return;
+            // Make images look clickable and tag index
+            imgs.forEach((img, i) => { if (!img.style.cursor) img.style.cursor = 'zoom-in'; img.dataset.lbIndex = String(i); });
+            const items = imgs.map((img) => ({ src: img.currentSrc || img.src, caption: img.getAttribute('alt') || '' }));
+            const lightbox = document.getElementById('post-lightbox');
+            if (!lightbox) { console.warn('[Lightbox] Missing #post-lightbox element'); return; }
+            const scope = lightbox;
+            const imgEl = scope.querySelector('#post-lightboxImage');
+            const closeBtn = scope.querySelector('#post-closeBtn');
+            const nextBtn = scope.querySelector('#post-nextBtn');
+            const prevBtn = scope.querySelector('#post-prevBtn');
+            const backdrop = scope.querySelector('#post-backdrop');
+            const counter = scope.querySelector('#post-counter');
+            const captionEl = scope.querySelector('#post-caption');
 
-        if (closeBtn) closeBtn.addEventListener('click', close);
-        if (backdrop) backdrop.addEventListener('click', close);
-        if (nextBtn) nextBtn.addEventListener('click', next);
-        if (prevBtn) prevBtn.addEventListener('click', prev);
-        document.addEventListener('keydown', (e) => {
-          if (scope.classList.contains('hidden')) return;
-          if (e.key === 'Escape') close();
-          if (e.key === 'ArrowRight') next();
-          if (e.key === 'ArrowLeft') prev();
-        });
+            let current = 0; let scale = 1, offsetX = 0, offsetY = 0, isPanning = false, startX = 0, startY = 0;
+            function applyTransform(){ if (!imgEl) return; imgEl.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${scale})`; imgEl.style.transition = 'transform 120ms ease-out'; imgEl.style.cursor = scale > 1 ? 'grab' : 'default'; }
+            function resetZoom(){ scale = 1; offsetX = 0; offsetY = 0; applyTransform(); }
+            function update(){ if (!imgEl) return; imgEl.setAttribute('src', items[current].src); if (counter) counter.textContent = `${current + 1} / ${items.length}`; if (captionEl) captionEl.textContent = items[current].caption || ''; resetZoom(); }
+            function openAt(idx){ current = idx; update(); scope.classList.remove('hidden'); scope.setAttribute('aria-hidden','false'); scope.style.display='block'; document.body.style.overflow='hidden'; }
+            function close(){ scope.classList.add('hidden'); scope.setAttribute('aria-hidden','true'); scope.style.display='none'; document.body.style.overflow=''; }
+            function next(){ current = (current + 1) % items.length; update(); }
+            function prev(){ current = (current - 1 + items.length) % items.length; update(); }
 
-        if (imgEl) imgEl.addEventListener('dblclick', () => { scale = scale > 1 ? 1 : 2; offsetX = 0; offsetY = 0; applyTransform(); });
-        if (imgEl) imgEl.addEventListener('wheel', (e) => { e.preventDefault(); const d = Math.sign(e.deltaY); const prev = scale; scale = Math.min(5, Math.max(1, scale + (d > 0 ? -0.2 : 0.2))); if (scale === 1) { offsetX = 0; offsetY = 0; } if (prev !== scale) applyTransform(); }, { passive: false });
-        if (imgEl) imgEl.addEventListener('mousedown', (e) => { if (scale <= 1) return; isPanning = true; startX = e.clientX - offsetX; startY = e.clientY - offsetY; imgEl.style.cursor = 'grabbing'; });
-        document.addEventListener('mousemove', (e) => { if (!isPanning) return; offsetX = e.clientX - startX; offsetY = e.clientY - startY; applyTransform(); });
-        document.addEventListener('mouseup', () => { isPanning = false; if (imgEl) imgEl.style.cursor = 'grab'; });
+            // Direct listener on each image (more reliable than delegation alone)
+            imgs.forEach((img, i) => {
+              img.addEventListener('click', (e) => { e.preventDefault(); openAt(i); });
+            });
+            // Delegation fallback (anchors wrapping images)
+            container.addEventListener('click', (e) => {
+              const img = e.target && e.target.closest ? e.target.closest('img[data-lb-index]') : null;
+              if (!img) return; const idx = parseInt(img.dataset.lbIndex || '-1', 10); if (idx >= 0) { e.preventDefault(); openAt(idx); }
+            });
+
+            if (closeBtn) closeBtn.addEventListener('click', close);
+            if (backdrop) backdrop.addEventListener('click', close);
+            if (nextBtn) nextBtn.addEventListener('click', next);
+            if (prevBtn) prevBtn.addEventListener('click', prev);
+            document.addEventListener('keydown', (e) => { if (scope.classList.contains('hidden')) return; if (e.key === 'Escape') close(); if (e.key === 'ArrowRight') next(); if (e.key === 'ArrowLeft') prev(); });
+
+            if (imgEl) imgEl.addEventListener('dblclick', () => { scale = scale > 1 ? 1 : 2; offsetX = 0; offsetY = 0; applyTransform(); });
+            if (imgEl) imgEl.addEventListener('wheel', (e) => { e.preventDefault(); const d = Math.sign(e.deltaY); const prev = scale; scale = Math.min(5, Math.max(1, scale + (d > 0 ? -0.2 : 0.2))); if (scale === 1) { offsetX = 0; offsetY = 0; } if (prev !== scale) applyTransform(); }, { passive: false });
+            if (imgEl) imgEl.addEventListener('mousedown', (e) => { if (scale <= 1) return; isPanning = true; startX = e.clientX - offsetX; startY = e.clientY - offsetY; imgEl.style.cursor = 'grabbing'; });
+            document.addEventListener('mousemove', (e) => { if (!isPanning) return; offsetX = e.clientX - startX; offsetY = e.clientY - startY; applyTransform(); });
+            document.addEventListener('mouseup', () => { isPanning = false; if (imgEl) imgEl.style.cursor = 'grab'; });
+
+            // MutationObserver to catch late-added images (e.g., hydration, embeds)
+            const mo = new MutationObserver(() => {
+              const fresh = collectImages();
+              if (fresh.length !== imgs.length) {
+                imgs = fresh;
+                // reassign indices & items (simple approach: full refresh)
+                imgs.forEach((img, i) => { img.dataset.lbIndex = String(i); if (!img.style.cursor) img.style.cursor = 'zoom-in'; });
+              }
+            });
+            mo.observe(container, { childList: true, subtree: true });
+            console.debug('[Lightbox] Initialized with', items.length, 'imágenes');
+        }
       }
 
       if (document.readyState === 'loading') {
