@@ -715,3 +715,74 @@ export async function getWpPostById(id: number): Promise<NormalizedPost | undefi
   }
   return undefined;
 }
+
+// ---------------------------------------------------------------------------
+// Safe wrappers (no-throw) + simple circuit breaker to avoid cascades of errors
+// ---------------------------------------------------------------------------
+// If repeated failures occur (network / non-JSON), we pause further attempts
+// for a short backoff window so each SSR request doesn't hammer the remote API.
+
+let _wpTempDisabledUntil = 0;
+let _wpLastErrorSnippet: string | undefined;
+let _wpLastLoggedAt = 0;
+
+function wpBackoffActive() {
+  return Date.now() < _wpTempDisabledUntil;
+}
+
+function markWpFailure(e: any) {
+  _wpTempDisabledUntil = Date.now() + 60_000; // 60s backoff
+  const msg = e?.message || String(e);
+  _wpLastErrorSnippet = msg.slice(0, 200);
+}
+
+function maybeLog(label: string, e: any) {
+  // Log at most every 20s to avoid noise.
+  const now = Date.now();
+  if (now - _wpLastLoggedAt < 20_000) return;
+  _wpLastLoggedAt = now;
+  const msg = e?.message || String(e);
+  if (typeof console !== 'undefined') {
+    console.warn(`[wp-safe] ${label} fallo:`, msg);
+    if (wpBackoffActive()) {
+      const remain = Math.max(0, Math.round((_wpTempDisabledUntil - now) / 1000));
+      console.warn(`[wp-safe] Backoff activo ${remain}s. Se devolverán vacíos/fallbacks.`);
+    }
+  }
+}
+
+export async function safeListWpPosts(limit = 100): Promise<NormalizedPost[]> {
+  if (wpBackoffActive()) return [];
+  try {
+    return await listWpPosts(limit);
+  } catch (e: any) {
+    markWpFailure(e); maybeLog('listWpPosts', e); return [];
+  }
+}
+
+export async function safeListWpPostsPage(page = 1, perPage = 9, opts?: { search?: string }): Promise<{ posts: NormalizedPost[]; total: number; totalPages: number }> {
+  if (wpBackoffActive()) return { posts: [], total: 0, totalPages: 0 };
+  try {
+    return await listWpPostsPage(page, perPage, opts);
+  } catch (e: any) {
+    markWpFailure(e); maybeLog('listWpPostsPage', e); return { posts: [], total: 0, totalPages: 0 };
+  }
+}
+
+export async function safeGetWpPostBySlug(slug: string): Promise<NormalizedPost | undefined> {
+  if (wpBackoffActive()) return undefined;
+  try { return await getWpPostBySlug(slug); } catch (e: any) { markWpFailure(e); maybeLog('getWpPostBySlug', e); return undefined; }
+}
+
+export async function safeGetWpPostById(id: number): Promise<NormalizedPost | undefined> {
+  if (wpBackoffActive()) return undefined;
+  try { return await getWpPostById(id); } catch (e: any) { markWpFailure(e); maybeLog('getWpPostById', e); return undefined; }
+}
+
+export function getWpLastErrorInfo() {
+  return {
+    backoffActive: wpBackoffActive(),
+    backoffMsRemaining: Math.max(0, _wpTempDisabledUntil - Date.now()),
+    lastError: _wpLastErrorSnippet,
+  };
+}
