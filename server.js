@@ -24,6 +24,29 @@ process.on('uncaughtException', (err) => {
 		}
 
 		// ---------------------------------------------------------------
+		// Verificación de archivos estáticos críticos (logo / favicon)
+		// Útil para detectar despliegues incompletos donde dist/client no se copió entero.
+		// ---------------------------------------------------------------
+		try {
+			const { existsSync } = await import('node:fs');
+			const { join } = await import('node:path');
+			const logoPath = join(process.cwd(), 'dist', 'client', 'logo1.png');
+			const faviconPath = join(process.cwd(), 'dist', 'client', 'favicon.svg');
+			if (!existsSync(logoPath)) {
+				console.warn('[assets] logo1.png NO encontrado en dist/client. Probable despliegue parcial.');
+			} else {
+				console.log('[assets] logo1.png OK en dist/client');
+			}
+			if (!existsSync(faviconPath)) {
+				console.warn('[assets] favicon.svg NO encontrado en dist/client.');
+			} else {
+				console.log('[assets] favicon.svg OK en dist/client');
+			}
+		} catch (e) {
+			console.warn('[assets] Error comprobando archivos estáticos:', e?.message || e);
+		}
+
+		// ---------------------------------------------------------------
 		// Post-start lightweight probe to WordPress API (non-blocking)
 		// Objetivo: detectar pronto si la API WP está inaccesible o devuelve HTML
 		// y registrar un mensaje claro (antes de la primera petición real SSR).

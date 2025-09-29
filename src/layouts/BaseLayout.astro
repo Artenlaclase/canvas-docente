@@ -1,5 +1,6 @@
 ---
 import "../styles/global.css";
+import favicon from "../assets/favicon.svg";
 import Footer from "../components/Footer.astro";
 const { title = 'Canvas Docente', description = '20 años de artes visuales', lang = 'es', image, url, noIndex = false, publishedTime, modifiedTime, tags } = Astro.props as {
   title?: string;
@@ -29,7 +30,7 @@ const canonicalUrl = abs(url || Astro.url?.pathname || '/');
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="icon" type="image/svg+xml" href={favicon.src} sizes="any" />
     <meta name="description" content={description} />
     <meta name="generator" content={Astro.generator} />
   {noIndex ? <meta name="robots" content="noindex,follow" /> : null}
