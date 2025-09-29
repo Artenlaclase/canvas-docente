@@ -164,4 +164,22 @@ if (pool.length) {
       </div>
     </div>
   </section>
+  <script>
+    // Si venimos de la página de privacidad con intención de volver al formulario
+    try {
+      if (sessionStorage.getItem('scrollToContact') === '1') {
+        sessionStorage.removeItem('scrollToContact');
+        const target = document.getElementById('contacto');
+        if (target) {
+          // pequeño retraso para asegurar layout estable
+          setTimeout(() => {
+            target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            // Intentar enfocar el primer campo del formulario
+            const firstInput = target.querySelector('input, textarea, select, button') as HTMLElement | null;
+            if (firstInput) firstInput.focus({ preventScroll: true });
+          }, 60);
+        }
+      }
+    } catch {}
+  </script>
 </BaseLayout>

@@ -2,6 +2,11 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Scroll suave en anclas dentro de la misma página */
+html {
+  scroll-behavior: smooth;
+}
+
 /* Custom prose colors */
 .prose {
   @apply prose-slate;
