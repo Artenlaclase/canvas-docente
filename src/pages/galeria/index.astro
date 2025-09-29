@@ -3,6 +3,7 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
 import Header from "../../components/Header.astro";
 import TechniqueGallery from "../../components/TechniqueGallery.astro";
 // Portada de Galería: mosaico por técnicas
+export const prerender = true; // generar HTML estático (fallback si módulo no carga en runtime)
 ---
 <BaseLayout title="Galería | Canvas Docente">
   <Fragment slot="header"><Header /></Fragment>
