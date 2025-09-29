@@ -46,6 +46,55 @@
   <script>
     const form = document.getElementById('contact-form') as HTMLFormElement | null;
     const statusEl = document.getElementById('form-status') as HTMLParagraphElement | null;
+    const STORAGE_KEY = 'contactFormDraft';
+
+    function loadDraft() {
+      try {
+        const raw = sessionStorage.getItem(STORAGE_KEY);
+        if (!raw || !form) return;
+        const draft = JSON.parse(raw);
+        ['name','email','subject','message'].forEach(id => {
+          const el = form.querySelector('#' + id) as HTMLInputElement | HTMLTextAreaElement | null;
+          if (el && typeof draft[id] === 'string') el.value = draft[id];
+        });
+        const consent = form.querySelector('#consent') as HTMLInputElement | null;
+        if (consent && typeof draft['consent'] === 'boolean') consent.checked = draft['consent'];
+      } catch {}
+    }
+
+    function saveDraft() {
+      if (!form) return;
+      try {
+        const payload: Record<string, any> = {};
+        ['name','email','subject','message'].forEach(id => {
+          const el = form.querySelector('#' + id) as HTMLInputElement | HTMLTextAreaElement | null;
+          if (el) payload[id] = el.value;
+        });
+        const consent = form.querySelector('#consent') as HTMLInputElement | null;
+        if (consent) payload['consent'] = consent.checked;
+        sessionStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+      } catch {}
+    }
+
+    // Guardar borrador en cada cambio (throttle simple via timeout)
+    let draftTimer: number | undefined;
+    function queueSave() {
+      if (draftTimer) clearTimeout(draftTimer);
+      draftTimer = setTimeout(saveDraft, 250) as unknown as number;
+    }
+
+    if (form) {
+      form.addEventListener('input', queueSave, true);
+      loadDraft();
+    }
+
+    // Guardar justo antes de abandonar hacia la política de privacidad (capturar click en enlace interno)
+    document.addEventListener('click', (e) => {
+      const target = e.target as HTMLElement;
+      if (target && target.closest('a[href="/privacidad"]')) {
+        saveDraft();
+      }
+    });
     if (form) {
       form.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -74,6 +123,7 @@
             statusEl.className = 'text-sm text-emerald-700';
             statusEl.textContent = '¡Gracias! Tu mensaje fue enviado.';
             form.reset();
+            try { sessionStorage.removeItem(STORAGE_KEY); } catch {}
           } else {
             statusEl.className = 'text-sm text-rose-700';
             statusEl.textContent = data?.error || 'No se pudo enviar. Intenta nuevamente.';
