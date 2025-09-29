@@ -1,0 +1,64 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import Header from "../components/Header.astro";
+
+const pageTitle = 'Política de Privacidad';
+const pageDescription = 'Cómo se recopilan, usan y protegen los datos enviados a través del formulario de contacto.';
+---
+<BaseLayout title={pageTitle} description={pageDescription} url="/privacidad">
+  <Fragment slot="header">
+    <Header />
+  </Fragment>
+  <article class="prose prose-slate max-w-3xl">
+    <h1>{pageTitle}</h1>
+    <p class="lead">Esta página explica cómo trato los datos personales que me envías mediante el formulario de contacto de Arte en la clase.</p>
+
+    <div class="not-prose mt-4 mb-8">
+      <a href="/#contacto" class="inline-flex items-center gap-2 rounded-md bg-sky-600 px-4 py-2.5 text-white text-sm font-medium shadow hover:bg-sky-700 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2">
+        <span>Volver a enviar un mensaje</span>
+      </a>
+    </div>
+
+  <h2>1. Responsable del tratamiento</h2>
+  <p>El responsable del tratamiento de los datos es el administrador de este sitio ("Arte en la Clase"). Para cualquier consulta o ejercicio de derechos puedes usar el formulario de contacto o escribir a <a href="mailto:politicas@artenlaclase.cl">politicas@artenlaclase.cl</a>.</p>
+
+    <h2>2. Datos que se recopilan</h2>
+    <p>Cuando envías el formulario se registran los campos: nombre, email, asunto y mensaje. No se solicitan datos sensibles.</p>
+
+    <h2>3. Finalidad</h2>
+    <p>La única finalidad es responder a tu consulta, propuesta o solicitud de colaboración.</p>
+
+    <h2>4. Base legal</h2>
+    <p>El consentimiento explícito que otorgas marcando la casilla antes de enviar el formulario.</p>
+
+  <h2>5. Conservación</h2>
+  <p>Los datos se conservan el tiempo estrictamente necesario para gestionar la comunicación y, si has mostrado interés continuado o lo indicas expresamente, podrán incorporarse a una lista para el envío puntual de novedades o boletines (newsletter). Puedes solicitar en cualquier momento la eliminación de tus datos o dejar de recibir comunicaciones.</p>
+
+    <h2>6. Cesiones y transferencias</h2>
+    <p>No se venden ni ceden tus datos a terceros. El correo puede pasar por los proveedores estándar de envío (por ejemplo el servicio de hosting o API de correo configurada).</p>
+
+    <h2>7. Seguridad</h2>
+    <p>Se aplican medidas razonables para evitar accesos no autorizados. No obstante, ninguna transmisión por Internet es 100% invulnerable.</p>
+
+  <h2>8. Derechos</h2>
+  <p>Puedes solicitar en cualquier momento: acceso, rectificación, supresión, limitación u oposición, así como retirar tu consentimiento. Indícalo vía el formulario con el mismo email usado originalmente o escribiendo a <a href="mailto:politicas@artenlaclase.cl">politicas@artenlaclase.cl</a>. La baja de comunicaciones (newsletter) también puede pedirse por ese medio.</p>
+
+    <h2>9. Cookies y analítica</h2>
+    <p>Esta página de privacidad no introduce cookies adicionales. Si en el futuro se añade analítica, se actualizará este aviso.</p>
+
+  <h2>10. Modificaciones</h2>
+  <p>Este texto puede actualizarse para reflejar cambios normativos o de funcionamiento. La fecha de última revisión aparecerá aquí.</p>
+
+  <h2>11. Newsletter</h2>
+  <p>Eventualmente puedo enviar un boletín (newsletter) con novedades sobre proyectos, técnicas o nuevas publicaciones. La frecuencia estimada es baja (ocasional o mensual como máximo). No se envía spam ni campañas masivas automatizadas.</p>
+  <p>Cómo te doy de baja: responde cualquier correo indicando "BAJA" o envía un email a <a href="mailto:politicas@artenlaclase.cl">politicas@artenlaclase.cl</a>. También puedes solicitar la eliminación total de tus datos. No se comparten listas con terceros.</p>
+
+    <p class="text-sm text-slate-500">Última actualización: {new Date().toISOString().split('T')[0]}</p>
+
+    <div class="not-prose mt-10">
+      <a href="/#contacto" class="inline-flex items-center gap-2 rounded-md bg-sky-600 px-5 py-2.5 text-white text-sm font-medium shadow hover:bg-sky-700 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2">
+        <span>Volver a enviar un mensaje</span>
+      </a>
+    </div>
+  </article>
+</BaseLayout>

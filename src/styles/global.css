@@ -109,6 +109,23 @@
   border-radius: 0.5rem;
 }
 
+/* ========================= */
+/* Scroll reveal (generic)   */
+/* ========================= */
+.reveal-on-scroll {
+  opacity: 0;
+  transform: translateY(42px);
+  transition: opacity .75s cubic-bezier(.16,.84,.44,1), transform .75s cubic-bezier(.16,.84,.44,1);
+  will-change: opacity, transform;
+}
+.reveal-on-scroll.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+@media (prefers-reduced-motion: reduce) {
+  .reveal-on-scroll { transition: none; transform: none; opacity: 1; }
+}
+
 /* Default: inline images in post content are smaller and centered */
 .prose .wp-content img {
   display: block;
