@@ -1,0 +1,33 @@
+---
+/**
+ * Schema de Person para el autor (Raúl Rosales)
+ * Inyectar en BaseLayout o páginas principales
+ */
+
+const authorData = {
+  '@context': 'https://schema.org',
+  '@type': 'Person',
+  name: 'Raúl Rosales',
+  url: Astro.site?.toString() || 'https://artenlaclase.cl',
+  jobTitle: 'Profesor de Artes Visuales',
+  description: '20 años de experiencia en educación artística y tecnología. Especialista en técnicas de arte y formación de estudiantes.',
+  image: (Astro.site?.toString() || '') + '/images/raul-rosales.jpg',
+  sameAs: [
+    'https://www.linkedin.com/in/raul-rosales',
+    'https://www.instagram.com/raul.rosales.arte',
+  ],
+  knowsAbout: [
+    'Artes visuales',
+    'Educación artística',
+    'Técnicas de pintura',
+    'Técnicas de escultura',
+    'Arte digital',
+    'Audiovisual',
+    'Cine escolar',
+    'Mosaico',
+    'Cerámica',
+  ],
+};
+---
+
+<script type="application/ld+json" is:inline set:html={JSON.stringify(authorData)} />

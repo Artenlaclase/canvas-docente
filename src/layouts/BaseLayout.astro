@@ -2,6 +2,8 @@
 import "../styles/global.css";
 import favicon from "../assets/favicon.svg";
 import Footer from "../components/Footer.astro";
+import SEO from "../components/SEO.astro";
+import SchemaPerson from "../components/SchemaPerson.astro";
 
 // Tipado separado para evitar objetos inline grandes que a veces confunden el parser
 interface LayoutProps {
@@ -9,58 +11,56 @@ interface LayoutProps {
   description?: string;
   lang?: string;
   image?: string;
+  imageAlt?: string;
   url?: string;
   noIndex?: boolean;
   publishedTime?: string; // ISO
   modifiedTime?: string;  // ISO
   tags?: string[];
+  type?: 'article' | 'website' | 'artwork';
+  author?: string;
+  contentType?: string;
 }
 
 const props = Astro.props as LayoutProps;
 const title = props.title ?? 'Canvas Docente';
 const description = props.description ?? '20 años de artes visuales';
 const lang = props.lang ?? 'es';
-const { image, url, noIndex = false, publishedTime, modifiedTime, tags } = props;
-
-function abs(u?: string) {
-  if (!u) return undefined;
-  try {
-    if (/^https?:\/\//i.test(u)) return u;
-    const base = (Astro.site ? Astro.site.toString() : (Astro.url ? Astro.url.origin : '')) || '';
-    if (!base) return u;
-    return new URL(u, base).toString();
-  } catch {
-    return u;
-  }
-}
-
-const ogImage = abs(image);
-const canonicalUrl = abs(url || Astro.url?.pathname || '/');
+const { 
+  image, 
+  imageAlt,
+  url, 
+  noIndex = false, 
+  publishedTime, 
+  modifiedTime, 
+  tags = [],
+  type = 'website',
+  author,
+  contentType,
+} = props;
 ---
 <html lang={lang} class="h-full">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <link rel="icon" type="image/svg+xml" href={favicon.src} sizes="any" />
-    <meta name="description" content={description} />
-    <meta name="generator" content={Astro.generator} />
-  {noIndex ? <meta name="robots" content="noindex,follow" /> : null}
-  <meta property="og:type" content="article" />
-  {publishedTime && <meta property="article:published_time" content={publishedTime} />}
-  {modifiedTime && <meta property="article:modified_time" content={modifiedTime} />}
-  {Array.isArray(tags) && tags.slice(0,12).map(t => t && <meta property="article:tag" content={t} />)}
-  <meta property="og:site_name" content="Canvas Docente" />
-  <meta property="og:title" content={title} />
-  <meta property="og:description" content={description} />
-  {canonicalUrl && <meta property="og:url" content={canonicalUrl} />}
-  {ogImage && <meta property="og:image" content={ogImage} />}
-  {ogImage && <meta property="og:image:alt" content={title} />}
-  <meta name="twitter:card" content={ogImage ? 'summary_large_image' : 'summary'} />
-  <meta name="twitter:title" content={title} />
-  <meta name="twitter:description" content={description} />
-  {ogImage && <meta name="twitter:image" content={ogImage} />}
-  {canonicalUrl && <link rel="canonical" href={canonicalUrl} />}
-    <title>{title}</title>
+    <link rel="icon" type="image/svg+xml" href={favicon.src} sizes="any" />
+    
+    <SEO 
+      title={title}
+      description={description}
+      url={url}
+      image={image}
+      imageAlt={imageAlt}
+      publishedTime={publishedTime}
+      modifiedTime={modifiedTime}
+      tags={tags}
+      noIndex={noIndex}
+      type={type}
+      author={author}
+      contentType={contentType}
+    />
+    
+    <SchemaPerson />
   </head>
   <body class="min-h-screen bg-white text-slate-900 antialiased flex flex-col">
     <slot name="header" />

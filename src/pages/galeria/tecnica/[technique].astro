@@ -44,6 +44,9 @@ const descriptions: Record<string, string> = {
   'Dibujo': 'Técnicas de línea, sombreado y observación para desarrollar el gesto y la mirada.',
 };
 
+const pageDescription = descriptions[technique] || 'Exploración artística y educativa';
+const pageTitle = `${technique} - Galería de Obras | Canvas Docente`;
+
 // Carga de imágenes desde assets según técnica (globs estáticos requeridos por Vite)
 const pinturaMods = import.meta.glob('../../../assets/images/pintura*.{jpg,JPG,jpeg,png,webp}', { eager: true, import: 'default' });
 const collageMods = import.meta.glob('../../../assets/images/collage*.{jpg,JPG,jpeg,png,webp}', { eager: true, import: 'default' });
@@ -133,8 +136,17 @@ const videosByTechnique: Record<string, string[]> = {
   ],
 };
 const videoIds = videosByTechnique[technique] ?? [];
+
+// Primera imagen como OG image
+const firstImage = techniqueImages[0];
 ---
-<BaseLayout title={`${technique} | Galería`}>
+<BaseLayout 
+  title={pageTitle}
+  description={pageDescription}
+  image={firstImage ? (typeof firstImage === 'string' ? firstImage : firstImage.src) : undefined}
+  imageAlt={`Galería de obras de arte en técnica ${technique}`}
+  type="artwork"
+>
   <Fragment slot="header"><Header /></Fragment>
   
   <!-- Top breadcrumb / back controls -->

@@ -1,0 +1,36 @@
+# Canvas Docente - robots.txt
+# Política de rastreo para motores de búsqueda
+
+User-agent: *
+Allow: /
+Allow: /blog
+Allow: /galeria
+Allow: /sobre-mi
+Allow: /contacto
+
+# Desindexar rutas API y de debugging
+Disallow: /api/
+Disallow: /_health
+Disallow: /env-debug
+Disallow: /wp-
+
+# Desindexar búsquedas y parámetros específicos
+Disallow: /*?*id=
+Disallow: /*?*search=
+
+# Permitir acceso a activos
+Allow: /images/
+Allow: /fonts/
+Allow: /styles/
+Allow: /js/
+
+# Rastreo lento para endpoints intensivos
+User-agent: AhrefsBot
+Crawl-delay: 10
+
+User-agent: SemrushBot
+Crawl-delay: 10
+
+# Sitemap
+Sitemap: https://artenlaclase.cl/sitemap-index.xml
+Sitemap: https://artenlaclase.cl/sitemap-0.xml
