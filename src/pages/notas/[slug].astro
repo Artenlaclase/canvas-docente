@@ -58,7 +58,31 @@ function resolveCoverPath(path: string | undefined): string | undefined {
   return undefined;
 }
 ---
-<BaseLayout title={`${(isWP ? wpPost!.data.title : localPost.data.title)} | Notas`}>
+{/** Derivar portada final para meta OG */}
+{(() => {
+  let cover: string | undefined;
+  if (isWP && wpPost) {
+    cover = wpPost.data.cover || (wpPost.contentHtml?.match(/<img[^>]+src=["']([^"']+)["']/i)?.[1]);
+  } else if (!isWP && localPost) {
+    const cp = localPost.data.cover as string | undefined;
+    cover = cp ? resolveCoverPath(cp) || cp : undefined;
+  }
+  // Normalizar a absoluta si parece relativa
+  if (cover && !/^https?:\/\//i.test(cover)) {
+    try { cover = new URL(cover, Astro.url).toString(); } catch {}
+  }
+  (Astro as any).locals = { ...(Astro as any).locals, _ogImage: cover }; // opcional debug
+  return null;
+})()}
+<BaseLayout
+  title={`${(isWP ? wpPost!.data.title : localPost.data.title)} | Notas`}
+  description={isWP ? (wpPost!.data.excerpt || wpPost!.data.title) : (localPost.data.excerpt || localPost.data.title)}
+  image={(Astro as any).locals?._ogImage}
+  url={`/notas/${encodeURIComponent(isWP ? wpPost!.slug : localPost.slug)}`}
+  publishedTime={isWP ? wpPost!.data.date : (localPost.data.date as string)}
+  modifiedTime={isWP ? (wpPost!.data.modified || wpPost!.data.date) : (localPost.data.updated || localPost.data.date)}
+  tags={(isWP ? (wpPost!.data.categories || []).map(c=>c.name).filter(Boolean) : (localPost.data.tags || [])).slice(0,12)}
+>
   <Fragment slot="header"><Header /></Fragment>
   <div class="mx-auto max-w-7xl px-4 lg:px-8">
     <div class="grid grid-cols-1 lg:grid-cols-4 gap-10">
@@ -82,3 +106,81 @@ function resolveCoverPath(path: string | undefined): string | undefined {
     </div>
   </div>
 </BaseLayout>
+<script>
+// @ts-nocheck
+(function(){
+  function initLightbox(){
+    const container = document.querySelector('article .wp-content');
+    if(!container) return;
+    function collect(){
+      return Array.from(container.querySelectorAll('img'))
+        .filter(img => img && (img.currentSrc || img.src));
+    }
+    let imgs = collect();
+    const lightbox = document.getElementById('post-lightbox');
+    if(!lightbox){
+      // Crear lightbox si no existe (más simple reutilizando estructura usada en /blog)
+      const tpl = document.createElement('div');
+      tpl.innerHTML = `<div id="post-lightbox" class="fixed inset-0 z-[9999] hidden" aria-hidden="true">
+        <div id="post-backdrop" class="absolute inset-0 bg-black/70"></div>
+        <div class="absolute inset-0 flex items-center justify-center p-4">
+          <div class="relative w-full max-w-6xl">
+            <div class="relative bg-black rounded-lg overflow-hidden">
+              <button id="post-closeBtn" class="absolute top-2 right-2 z-10 h-10 w-10 grid place-items-center rounded-full bg-black/50 text-white text-xl hover:bg-black/70" aria-label="Cerrar">×</button>
+              <button id="post-prevBtn" class="absolute left-2 top-1/2 -translate-y-1/2 z-10 h-10 w-10 rounded-full bg-black/40 text-white hover:bg-black/60">‹</button>
+              <button id="post-nextBtn" class="absolute right-2 top-1/2 -translate-y-1/2 z-10 h-10 w-10 rounded-full bg-black/40 text-white hover:bg-black/60">›</button>
+              <div class="w-[min(100vw,96rem)] max-h-[95vh] pt-12 flex items-center justify-center">
+                <img id="post-lightboxImage" class="max-h-[95vh] w-auto object-contain select-none" alt="Imagen de entrada" />
+              </div>
+            </div>
+            <div id="post-counter" class="mt-2 text-center text-white/90"></div>
+            <div id="post-caption" class="mt-1 text-center text-white/80 text-sm"></div>
+          </div>
+        </div>
+      </div>`;
+      document.body.appendChild(tpl.firstElementChild);
+    }
+    const scope = document.getElementById('post-lightbox');
+    const imgEl = scope.querySelector('#post-lightboxImage');
+    const closeBtn = scope.querySelector('#post-closeBtn');
+    const nextBtn = scope.querySelector('#post-nextBtn');
+    const prevBtn = scope.querySelector('#post-prevBtn');
+    const backdrop = scope.querySelector('#post-backdrop');
+    const counter = scope.querySelector('#post-counter');
+    const captionEl = scope.querySelector('#post-caption');
+
+    function indexify(){ imgs.forEach((im,i)=>{ im.dataset.lbIndex=String(i); if(!im.style.cursor) im.style.cursor='zoom-in'; }); }
+    indexify();
+    let items = imgs.map(im => ({ src: im.currentSrc || im.src, caption: im.getAttribute('alt')||'' }));
+
+    let current=0, scale=1, offsetX=0, offsetY=0, isPanning=false, startX=0, startY=0;
+    function applyTransform(){ if(!imgEl) return; imgEl.style.transform=`translate(${offsetX}px,${offsetY}px) scale(${scale})`; imgEl.style.transition='transform 120ms ease-out'; imgEl.style.cursor= scale>1?'grab':'default'; }
+    function resetZoom(){ scale=1; offsetX=0; offsetY=0; applyTransform(); }
+    function update(){ if(!imgEl) return; imgEl.src=items[current].src; if(counter) counter.textContent=`${current+1} / ${items.length}`; if(captionEl) captionEl.textContent=items[current].caption||''; resetZoom(); }
+    function openAt(i){ current=i; update(); scope.classList.remove('hidden'); scope.setAttribute('aria-hidden','false'); scope.style.display='block'; document.body.style.overflow='hidden'; }
+    function close(){ scope.classList.add('hidden'); scope.setAttribute('aria-hidden','true'); scope.style.display='none'; document.body.style.overflow=''; }
+    function next(){ current=(current+1)%items.length; update(); }
+    function prev(){ current=(current-1+items.length)%items.length; update(); }
+
+    imgs.forEach((im,i)=> im.addEventListener('click', e=>{ e.preventDefault(); openAt(i); }));
+    container.addEventListener('click', e=>{ const img=e.target && e.target.closest? e.target.closest('img[data-lb-index]'):null; if(!img) return; const idx=parseInt(img.dataset.lbIndex||'-1',10); if(idx>=0){ e.preventDefault(); openAt(idx);} });
+    if(closeBtn) closeBtn.addEventListener('click', close);
+    if(backdrop) backdrop.addEventListener('click', close);
+    if(nextBtn) nextBtn.addEventListener('click', next);
+    if(prevBtn) prevBtn.addEventListener('click', prev);
+    document.addEventListener('keydown', e=>{ if(scope.classList.contains('hidden')) return; if(e.key==='Escape') close(); if(e.key==='ArrowRight') next(); if(e.key==='ArrowLeft') prev(); });
+    if(imgEl) imgEl.addEventListener('dblclick', ()=>{ scale= scale>1?1:2; offsetX=0; offsetY=0; applyTransform(); });
+    if(imgEl) imgEl.addEventListener('wheel', e=>{ e.preventDefault(); const d=Math.sign(e.deltaY); const before=scale; scale=Math.min(5, Math.max(1, scale + (d>0?-0.2:0.2))); if(scale===1){ offsetX=0; offsetY=0; } if(before!==scale) applyTransform(); }, { passive:false });
+    if(imgEl) imgEl.addEventListener('mousedown', e=>{ if(scale<=1) return; isPanning=true; startX=e.clientX-offsetX; startY=e.clientY-offsetY; imgEl.style.cursor='grabbing'; });
+    document.addEventListener('mousemove', e=>{ if(!isPanning) return; offsetX=e.clientX-startX; offsetY=e.clientY-startY; applyTransform(); });
+    document.addEventListener('mouseup', ()=>{ isPanning=false; if(imgEl) imgEl.style.cursor='grab'; });
+
+    const mo = new MutationObserver(()=>{
+      const fresh = collect();
+      if(fresh.length !== imgs.length){ imgs=fresh; indexify(); items = imgs.map(im => ({ src: im.currentSrc || im.src, caption: im.getAttribute('alt')||'' })); }
+    });
+    mo.observe(container,{childList:true, subtree:true});
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', initLightbox); else initLightbox();
+})();
+</script>

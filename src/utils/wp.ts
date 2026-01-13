@@ -5,6 +5,9 @@ export type WpRawPost = {
   id: number;
   slug: string;
   date: string;
+  // WordPress REST normalmente expone también 'modified' y 'modified_gmt'
+  modified?: string;
+  modified_gmt?: string;
   title: { rendered: string };
   excerpt: { rendered: string };
   content: { rendered: string };
@@ -20,6 +23,7 @@ export type NormalizedPost = {
     title: string;
     excerpt: string;
     date: string;
+    modified?: string; // fecha de última modificación si existe
     cover?: string;
     author?: string;
     categories?: Array<{ id?: number; name: string; slug?: string }>;
@@ -534,6 +538,7 @@ export function normalizePost(raw: WpRawPost): NormalizedPost {
       title: title.replace(/<[^>]+>/g, ''),
       excerpt: stripHtml(excerpt),
       date: raw.date,
+      modified: raw.modified || raw.modified_gmt, // conservar modificada si existe
       cover: normalizeImageUrl(coverRaw, siteRoot, mediaRoot),
       author: getAuthorName(raw),
       categories: getCategories(raw),
