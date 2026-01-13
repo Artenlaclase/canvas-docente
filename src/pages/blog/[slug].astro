@@ -2,6 +2,7 @@
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import Header from "../../components/Header.astro";
 import BlogCard from "../../components/BlogCard.astro";
+import RelatedContent from "../../components/RelatedContent.astro";
 import { getCollection } from 'astro:content';
 import { getWpBase, getWpPostBySlug, getWpPostById, type NormalizedPost } from "../../utils/wp";
 
@@ -267,6 +268,7 @@ function resolveCoverPath(path: string | undefined): string | undefined {
       </aside>
     </div>
   </div>
+  <RelatedContent contentType="blog" currentSlug={isWP ? wpPost!.slug : localPost.slug} limit={3} />
   {/* Lightbox modal for post images */}
   <div id="post-lightbox" class="fixed inset-0 z-[9999] hidden" aria-hidden="true">
     <div id="post-backdrop" class="absolute inset-0 bg-black/70"></div>

@@ -1,0 +1,106 @@
+---
+// Enhanced mobile navigation with smart grouping
+// Top 3 techniques + "View More" button to avoid overwhelming users
+
+interface Props {
+  nav?: Array<{ href: string; label: string }>;
+}
+
+const mainNav = [
+  { href: '/', label: 'Inicio' },
+  { href: '/notas', label: 'Notas' },
+  { href: '/sobre-mi', label: 'Experiencia' },
+  { href: '/#contacto', label: 'Contacto' },
+];
+
+// Top techniques (most popular/relevant first)
+const topTechniques = [
+  { href: '/galeria/tecnica/Pintura', label: 'Pintura', emoji: '🎨' },
+  { href: '/galeria/tecnica/Collage', label: 'Collage', emoji: '✂️' },
+  { href: '/galeria/tecnica/Audiovisual', label: 'Audiovisual', emoji: '📹' },
+];
+
+// All other techniques
+const otherTechniques = [
+  { href: '/galeria/tecnica/Mosaico', label: 'Mosaico', emoji: '🧩' },
+  { href: '/galeria/tecnica/Volumen', label: 'Volumen', emoji: '📦' },
+  { href: '/galeria/tecnica/Máscaras', label: 'Máscaras', emoji: '🎭' },
+  { href: '/galeria/tecnica/Lámparas', label: 'Lámparas', emoji: '💡' },
+  { href: '/galeria/tecnica/Diseño', label: 'Diseño', emoji: '🖼️' },
+  { href: '/galeria/tecnica/Dibujo', label: 'Dibujo', emoji: '✏️' },
+];
+---
+
+<nav class="mobile-menu-enhanced space-y-2">
+  <!-- Main navigation -->
+  {mainNav.map((item) => (
+    <a 
+      href={item.href} 
+      class="block rounded-md px-3 py-2 text-white/90 hover:bg-slate-800 hover:text-sky-300 transition-colors"
+    >
+      {item.label}
+    </a>
+  ))}
+  
+  <!-- Gallery divider -->
+  <div class="h-px bg-slate-700 my-3"></div>
+  
+  <!-- Gallery label -->
+  <p class="px-3 py-2 text-xs font-semibold text-white/60 uppercase tracking-wide">Técnicas</p>
+  
+  <!-- Top 3 techniques -->
+  {topTechniques.map((item) => (
+    <a 
+      href={item.href} 
+      class="flex rounded-md px-3 py-2 text-white/90 hover:bg-sky-600/20 hover:text-sky-300 transition-colors items-center gap-2"
+    >
+      <span>{item.emoji}</span>
+      <span>{item.label}</span>
+    </a>
+  ))}
+  
+  <!-- "View More" expandable section -->
+  <details class="group">
+    <summary class="flex rounded-md px-3 py-2 text-white/90 hover:bg-slate-800/50 hover:text-sky-300 cursor-pointer transition-colors font-medium items-center justify-between">
+      <span>Más técnicas</span>
+      <svg class="h-4 w-4 transition-transform group-open:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+      </svg>
+    </summary>
+    <div class="mt-1 space-y-1">
+      {otherTechniques.map((item) => (
+        <a 
+          href={item.href} 
+          class="flex rounded-md px-5 py-2 text-white/80 hover:bg-slate-800 hover:text-sky-300 transition-colors text-sm items-center gap-2"
+        >
+          <span>{item.emoji}</span>
+          <span>{item.label}</span>
+        </a>
+      ))}
+    </div>
+  </details>
+</nav>
+
+<script>
+  // Smooth closing of menu when a link is clicked
+  document.addEventListener('DOMContentLoaded', () => {
+    const mobileMenu = document.getElementById('mobile-menu');
+    const mobileMenuButton = document.getElementById('mobile-menu-button');
+    const links = document.querySelectorAll('.mobile-menu-enhanced a');
+    
+    links.forEach(link => {
+      link.addEventListener('click', () => {
+        // Close mobile menu after clicking a link
+        if (mobileMenu) {
+          mobileMenu.style.maxHeight = '0px';
+          mobileMenu.style.opacity = '0';
+          mobileMenu.setAttribute('aria-hidden', 'true');
+          mobileMenu.setAttribute('data-open', 'false');
+        }
+        if (mobileMenuButton) {
+          mobileMenuButton.setAttribute('aria-expanded', 'false');
+        }
+      });
+    });
+  });
+</script>
