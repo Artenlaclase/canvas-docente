@@ -2,14 +2,21 @@
 // Objetivo: asegurarnos de que use el puerto entregado por el entorno (process.env.PORT)
 // en lugar del default 4321 que toma el standalone si no se define.
 
-process.on('unhandledRejection', (err) => {
-	console.error('[server] UnhandledRejection:', err);
-});
-process.on('uncaughtException', (err) => {
-	console.error('[server] UncaughtException:', err);
-});
-
 (async () => {
+	try {
+		const dotenv = await import('dotenv');
+		dotenv.config();
+	} catch (e) {
+		console.warn('[server] dotenv not available (normal in production):', e?.message);
+	}
+
+	process.on('unhandledRejection', (err) => {
+		console.error('[server] UnhandledRejection:', err);
+	});
+	process.on('uncaughtException', (err) => {
+		console.error('[server] UncaughtException:', err);
+	});
+
 	try {
 		// Forzar PORT antes del import para que el standalone lo respete si auto-arranca.
 		const desiredPort = process.env.PORT || '3000';
