@@ -1,0 +1,71 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+const title = 'Obra no encontrada (404)';
+const description = 'La página que buscas no existe. Regresa al inicio o explora mi galería de arte.';
+---
+
+<BaseLayout title={title} description={description}>
+  <section class="py-20 sm:py-24">
+    <div class="mx-auto max-w-2xl text-center px-4 sm:px-6">
+      <!-- Número 404 estilizado -->
+      <div class="mb-8">
+        <p class="text-8xl sm:text-9xl font-bold bg-gradient-to-r from-sky-500 to-blue-600 bg-clip-text text-transparent">
+          404
+        </p>
+      </div>
+
+      <!-- Título creativo -->
+      <h1 class="text-3xl sm:text-4xl font-bold tracking-tight text-slate-900 dark:text-white mb-4">
+        Esta obra no ha sido encontrada
+      </h1>
+
+      <!-- Descripción -->
+      <p class="text-lg text-slate-600 dark:text-slate-300 mb-8">
+        Parece que el enlace que seguiste está roto o la página fue movida. Como artista, entiendo que a veces las obras desaparecen de la vista, pero aún existen en algún lugar del taller.
+      </p>
+
+      <!-- Sugerencias artísticas -->
+      <div class="grid sm:grid-cols-3 gap-4 my-10 mb-10">
+        <a 
+          href="/" 
+          class="inline-block rounded-lg bg-sky-600 px-6 py-3 font-semibold text-white hover:bg-sky-700 transition-colors"
+        >
+          ← Volver al inicio
+        </a>
+        <a 
+          href="/galeria/" 
+          class="inline-block rounded-lg border-2 border-sky-600 px-6 py-3 font-semibold text-sky-600 dark:text-sky-300 hover:bg-sky-50 dark:hover:bg-slate-800 transition-colors"
+        >
+          Explorar galería
+        </a>
+        <a 
+          href="/blog/" 
+          class="inline-block rounded-lg border-2 border-slate-300 dark:border-slate-600 px-6 py-3 font-semibold text-slate-900 dark:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+        >
+          Ver blog
+        </a>
+      </div>
+
+      <!-- Metáfora artística -->
+      <div class="mt-16 p-6 sm:p-8 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+        <p class="text-sm sm:text-base text-slate-600 dark:text-slate-300 italic">
+          "En el arte y en la web, a veces el camino desaparece. Pero siempre hay un nuevo lienzo esperando. Vuelve al taller y descubre más creaciones."
+        </p>
+      </div>
+
+      <!-- Contacto -->
+      <div class="mt-10">
+        <p class="text-slate-600 dark:text-slate-400 mb-4">
+          ¿Aún así crees que esto es un error?
+        </p>
+        <a 
+          href="/contacto" 
+          class="inline-block text-sky-600 dark:text-sky-300 hover:underline font-medium"
+        >
+          Contacta conmigo y cuéntame
+        </a>
+      </div>
+    </div>
+  </section>
+</BaseLayout>
