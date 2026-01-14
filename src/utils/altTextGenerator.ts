@@ -33,9 +33,9 @@ export function generateAltText(config: AltTextConfig): string {
       'Audiovisual': 'Registro audiovisual y narrativa visual',
       'Mosaico': 'Mural de mosaico con teselas y patrones modulares',
       'Volumen': 'Obra tridimensional exploración de forma y espacio',
-      'Máscaras': 'Diseño y creación de máscaras artesanales',
-      'Lámparas': 'Lámpara artesanal con diseño e iluminación integrada',
-      'Diseño': 'Lenguaje visual aplicado y composición gráfica',
+      'Mascaras': 'Diseño y creación de máscaras artesanales',
+      'Lamparas': 'Lámpara artesanal con diseño e iluminación integrada',
+      'Diseno': 'Lenguaje visual aplicado y composición gráfica',
       'Dibujo': 'Estudio dibujado con técnicas de línea y sombreado',
     };
     parts.push(techniqueDescriptions[technique] || `Obra de arte en técnica ${technique}`);

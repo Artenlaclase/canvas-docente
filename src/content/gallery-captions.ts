@@ -81,7 +81,7 @@ const captions: Record<string, Record<string, { description?: string; year?: num
             'experiencia.webp':   { year: 2017, school: 'Instituto La Salle La Florida' },
             'experimentales.jpg': { year: 2012, school: 'Colegio King School Cordillera La Pintana' },
         },
-    'Máscaras': {
+    'Mascaras': {
             'mascara.jpg': { year: 2022, school: 'Colegio María Griselda Valle, El Bosque' },
             'mascara1.jpg': { year: 2022, school: 'Colegio María Griselda Valle, El Bosque' },
             'mascara2.jpg': { year: 2022, school: 'Colegio María Griselda Valle, El Bosque' },
@@ -110,7 +110,7 @@ const captions: Record<string, Record<string, { description?: string; year?: num
             'mascara24.jpg': { year: 2018, school: 'Instituto La Salle La Florida' },
             'mascara25.jpg': { year: 2018, school: 'Instituto La Salle La Florida' },
     },
-    'Lámparas': {
+    'Lamparas': {
             // Nota: el listado de la galería usa archivos que comienzan con "lamparas".
             // 'lampara.png' no se usa en la galería, pero dejamos la metadata por si se muestra en otro contexto.
             'lampara.png':  { year: 2019, school: 'Colegio Eyzaguirre Puente Alto' },
@@ -143,7 +143,7 @@ const captions: Record<string, Record<string, { description?: string; year?: num
             'lamparas26.jpg': { year: 2017, school: 'Instituto La Salle La Florida' },
             'lamparas27.jpg': { year: 2017, school: 'Instituto La Salle La Florida' },
     },
-    'Diseño': {
+    'Diseno': {
         'diseño.jpg': { year: 2013, school: 'Colegio King School Cordillera La Pintana' },
         'diseño1.jpg': { year: 2013, school: 'Colegio King School Cordillera La Pintana' },
         'diseño2-pixelart.jpg': { year: 2017, school: 'Instituto La Salle La Florida' },
