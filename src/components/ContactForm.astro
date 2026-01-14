@@ -9,26 +9,26 @@ const { embedded = false } = Astro.props as Props;
     <form id="contact-form" class="mt-0 grid gap-4" novalidate>
       <div class="grid sm:grid-cols-2 gap-4">
         <div>
-          <label for="name" class="block text-sm font-medium text-slate-700">Nombre</label>
-          <input id="name" name="name" type="text" required class="mt-1 block w-full rounded-md border-2 border-slate-400 bg-white text-slate-900 placeholder-slate-400 focus:border-sky-600 focus:ring-2 focus:ring-sky-500 focus:outline-none" />
+          <label for="name" class="block text-sm font-medium text-slate-700 dark:text-white">Nombre</label>
+          <input id="name" name="name" type="text" required class="mt-1 block w-full rounded-md border-2 border-slate-400 dark:border-slate-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-300 focus:border-sky-600 focus:ring-2 focus:ring-sky-500 focus:outline-none" />
         </div>
         <div>
-          <label for="email" class="block text-sm font-medium text-slate-700">Email</label>
-          <input id="email" name="email" type="email" required class="mt-1 block w-full rounded-md border-2 border-slate-400 bg-white text-slate-900 placeholder-slate-400 focus:border-sky-600 focus:ring-2 focus:ring-sky-500 focus:outline-none" />
+          <label for="email" class="block text-sm font-medium text-slate-700 dark:text-white">Email</label>
+          <input id="email" name="email" type="email" required class="mt-1 block w-full rounded-md border-2 border-slate-400 dark:border-slate-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-300 focus:border-sky-600 focus:ring-2 focus:ring-sky-500 focus:outline-none" />
         </div>
       </div>
       <div>
-        <label for="subject" class="block text-sm font-medium text-slate-700">Asunto</label>
-        <input id="subject" name="subject" type="text" required class="mt-1 block w-full rounded-md border-2 border-slate-400 bg-white text-slate-900 placeholder-slate-400 focus:border-sky-600 focus:ring-2 focus:ring-sky-500 focus:outline-none" />
+        <label for="subject" class="block text-sm font-medium text-slate-700 dark:text-white">Asunto</label>
+        <input id="subject" name="subject" type="text" required class="mt-1 block w-full rounded-md border-2 border-slate-400 dark:border-slate-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-300 focus:border-sky-600 focus:ring-2 focus:ring-sky-500 focus:outline-none" />
       </div>
       <div>
-        <label for="message" class="block text-sm font-medium text-slate-700">Mensaje</label>
-        <textarea id="message" name="message" rows="6" required class="mt-1 block w-full rounded-md border-2 border-slate-400 bg-white text-slate-900 placeholder-slate-400 focus:border-sky-600 focus:ring-2 focus:ring-sky-500 focus:outline-none"></textarea>
+        <label for="message" class="block text-sm font-medium text-slate-700 dark:text-white">Mensaje</label>
+        <textarea id="message" name="message" rows="6" required class="mt-1 block w-full rounded-md border-2 border-slate-400 dark:border-slate-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-300 focus:border-sky-600 focus:ring-2 focus:ring-sky-500 focus:outline-none"></textarea>
       </div>
       <div class="mt-2 flex items-start gap-3">
         <input id="consent" name="consent" type="checkbox" required class="mt-1 h-4 w-4 rounded border-slate-400 text-sky-600 focus:ring-sky-500" />
-        <label for="consent" class="text-sm text-slate-600 leading-snug">
-          Acepto el uso de mis datos para responder este mensaje. Consulta la <a href="/privacidad" class="underline hover:text-sky-600">política de privacidad</a>.
+        <label for="consent" class="text-sm text-slate-600 dark:text-slate-200 leading-snug">
+          Acepto el uso de mis datos para responder este mensaje. Consulta la <a href="/privacidad" class="underline text-sky-600 dark:text-sky-300 hover:text-sky-700 dark:hover:text-sky-200">política de privacidad</a>.
         </label>
       </div>
       <div class="flex items-center gap-3">
@@ -38,33 +38,33 @@ const { embedded = false } = Astro.props as Props;
     </form>
   </div>
 ) : (
-  <section class="py-12 sm:py-16 border-t border-slate-200 mt-8 scroll-mt-24 sm:scroll-mt-28">
+  <section class="py-12 sm:py-16 border-t border-slate-200 dark:border-slate-700 mt-8 scroll-mt-24 sm:scroll-mt-28">
     <div class="mx-auto max-w-3xl">
-      <h2 class="text-2xl font-semibold tracking-tight">Envíame un mensaje</h2>
-      <p class="mt-2 text-slate-600">¿Tienes una propuesta, consulta o quieres colaborar? Completa el formulario y te responderé.</p>
+      <h2 class="text-2xl font-semibold tracking-tight dark:text-white">Envíame un mensaje</h2>
+      <p class="mt-2 text-slate-600 dark:text-slate-200">¿Tienes una propuesta, consulta o quieres colaborar? Completa el formulario y te responderé.</p>
       <form id="contact-form" class="mt-6 grid gap-4" novalidate>
         <div class="grid sm:grid-cols-2 gap-4">
           <div>
-            <label for="name" class="block text-sm font-medium text-slate-700">Nombre</label>
-            <input id="name" name="name" type="text" required class="mt-1 block w-full rounded-md border-2 border-slate-400 bg-white text-slate-900 placeholder-slate-400 focus:border-sky-600 focus:ring-2 focus:ring-sky-500 focus:outline-none" />
+            <label for="name" class="block text-sm font-medium text-slate-700 dark:text-white">Nombre</label>
+            <input id="name" name="name" type="text" required class="mt-1 block w-full rounded-md border-2 border-slate-400 dark:border-slate-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-300 focus:border-sky-600 focus:ring-2 focus:ring-sky-500 focus:outline-none" />
           </div>
           <div>
-            <label for="email" class="block text-sm font-medium text-slate-700">Email</label>
-            <input id="email" name="email" type="email" required class="mt-1 block w-full rounded-md border-2 border-slate-400 bg-white text-slate-900 placeholder-slate-400 focus:border-sky-600 focus:ring-2 focus:ring-sky-500 focus:outline-none" />
+            <label for="email" class="block text-sm font-medium text-slate-700 dark:text-white">Email</label>
+            <input id="email" name="email" type="email" required class="mt-1 block w-full rounded-md border-2 border-slate-400 dark:border-slate-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-300 focus:border-sky-600 focus:ring-2 focus:ring-sky-500 focus:outline-none" />
           </div>
         </div>
         <div>
-          <label for="subject" class="block text-sm font-medium text-slate-700">Asunto</label>
-          <input id="subject" name="subject" type="text" required class="mt-1 block w-full rounded-md border-2 border-slate-400 bg-white text-slate-900 placeholder-slate-400 focus:border-sky-600 focus:ring-2 focus:ring-sky-500 focus:outline-none" />
+          <label for="subject" class="block text-sm font-medium text-slate-700 dark:text-white">Asunto</label>
+          <input id="subject" name="subject" type="text" required class="mt-1 block w-full rounded-md border-2 border-slate-400 dark:border-slate-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-300 focus:border-sky-600 focus:ring-2 focus:ring-sky-500 focus:outline-none" />
         </div>
         <div>
-          <label for="message" class="block text-sm font-medium text-slate-700">Mensaje</label>
-          <textarea id="message" name="message" rows="6" required class="mt-1 block w-full rounded-md border-2 border-slate-400 bg-white text-slate-900 placeholder-slate-400 focus:border-sky-600 focus:ring-2 focus:ring-sky-500 focus:outline-none"></textarea>
+          <label for="message" class="block text-sm font-medium text-slate-700 dark:text-white">Mensaje</label>
+          <textarea id="message" name="message" rows="6" required class="mt-1 block w-full rounded-md border-2 border-slate-400 dark:border-slate-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-300 focus:border-sky-600 focus:ring-2 focus:ring-sky-500 focus:outline-none"></textarea>
         </div>
         <div class="mt-2 flex items-start gap-3">
           <input id="consent" name="consent" type="checkbox" required class="mt-1 h-4 w-4 rounded border-slate-400 text-sky-600 focus:ring-sky-500" />
-          <label for="consent" class="text-sm text-slate-600 leading-snug">
-            Acepto el uso de mis datos para responder este mensaje. Consulta la <a href="/privacidad" class="underline hover:text-sky-600">política de privacidad</a>.
+          <label for="consent" class="text-sm text-slate-600 dark:text-slate-200 leading-snug">
+            Acepto el uso de mis datos para responder este mensaje. Consulta la <a href="/privacidad" class="underline text-sky-600 dark:text-sky-300 hover:text-sky-700 dark:hover:text-sky-200">política de privacidad</a>.
           </label>
         </div>
         <div class="flex items-center gap-3">
