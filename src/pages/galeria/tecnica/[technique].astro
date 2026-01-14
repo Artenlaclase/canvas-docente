@@ -17,9 +17,9 @@ export async function getStaticPaths() {
     'Audiovisual',
     'Mosaico',
     'Volumen',
-    'Máscaras',
-    'Lámparas',
-    'Diseño',
+    'Mascaras',
+    'Lamparas',
+    'Diseno',
     'Dibujo',
   ];
   return techniques.map((t) => ({ params: { technique: t }, props: { technique: t } }));
@@ -39,9 +39,9 @@ const descriptions: Record<string, string> = {
   'Audiovisual': 'Narrativas visuales y sonoras: registro, montaje y experimentación con video.',
   'Mosaico': 'Construcción de imágenes a partir de teselas y patrones modulares.',
   'Volumen': 'Trabajo tridimensional: maquetas, esculturas y objetos con materiales variados.',
-  'Máscaras': 'Diseño y creación de máscaras con identidad, cultura y performance.',
-  'Lámparas': 'Diseño de luminarias artesanales integrando forma, función y atmósfera.',
-  'Diseño': 'Lenguaje visual aplicado: afiches, tipografía, composición y prototipado.',
+  'Mascaras': 'Diseño y creación de máscaras con identidad, cultura y performance.',
+  'Lamparas': 'Diseño de luminarias artesanales integrando forma, función y atmósfera.',
+  'Diseno': 'Lenguaje visual aplicado: afiches, tipografía, composición y prototipado.',
   'Dibujo': 'Técnicas de línea, sombreado y observación para desarrollar el gesto y la mirada.',
 };
 
@@ -67,9 +67,9 @@ const techToMods: Record<string, Record<string, any>> = {
   'Audiovisual': audiovisualMods,
   'Mosaico': mosaicoMods,
   'Volumen': volumenMods,
-  'Máscaras': { ...mascaraSingMods, ...mascaraPluralMods },
-  'Lámparas': lamparasMods,
-  'Diseño': { ...disenoAccMods, ...disenoPlainMods },
+  'Mascaras': { ...mascaraSingMods, ...mascaraPluralMods },
+  'Lamparas': lamparasMods,
+  'Diseno': { ...disenoAccMods, ...disenoPlainMods },
   'Dibujo': dibujoMods,
 };
 
