@@ -248,3 +248,127 @@ html {
   .prose .wp-block-columns.is-not-stacked-on-mobile.has-3-columns > .wp-block-column { flex-basis: 33.3333%; }
   .prose .wp-block-columns.is-not-stacked-on-mobile.has-4-columns > .wp-block-column { flex-basis: 25%; }
 }
+
+/* Dark Mode Styles */
+.dark {
+  color-scheme: dark;
+}
+
+.dark body {
+  @apply bg-slate-950 text-slate-100;
+}
+
+.dark header {
+  @apply bg-slate-950/95 border-slate-800;
+}
+
+.dark a {
+  @apply text-sky-400 hover:text-sky-300;
+}
+
+.dark .prose {
+  @apply prose-invert;
+}
+
+.dark .prose h1,
+.dark .prose h2,
+.dark .prose h3 {
+  @apply text-slate-100;
+}
+
+.dark .prose strong {
+  @apply text-slate-200;
+}
+
+.dark .prose code {
+  @apply bg-slate-800 text-sky-300;
+}
+
+.dark .prose pre {
+  @apply bg-slate-900 border-slate-700;
+}
+
+.dark .prose blockquote {
+  @apply border-slate-700 text-slate-300;
+}
+
+.dark .prose hr {
+  @apply border-slate-700;
+}
+
+.dark .prose table {
+  @apply border-slate-700;
+}
+
+.dark .prose th,
+.dark .prose td {
+  @apply border-slate-700;
+}
+
+.dark footer {
+  @apply bg-slate-900 border-slate-800;
+}
+
+.dark .border-slate-200 {
+  @apply border-slate-700;
+}
+
+.dark .bg-white {
+  @apply bg-slate-900;
+}
+
+.dark .bg-slate-50 {
+  @apply bg-slate-800;
+}
+
+.dark .bg-slate-100 {
+  @apply bg-slate-800;
+}
+
+.dark .bg-sky-50 {
+  @apply bg-slate-900 border-slate-700;
+}
+
+.dark .text-slate-600 {
+  @apply text-slate-400;
+}
+
+.dark .text-slate-900 {
+  @apply text-slate-100;
+}
+
+.dark .hover\:bg-slate-50:hover {
+  @apply bg-slate-800;
+}
+
+.dark .hover\:text-slate-800:hover {
+  @apply text-slate-100;
+}
+
+.dark .shadow-sm {
+  @apply shadow-slate-900/50;
+}
+
+.dark .shadow-md {
+  @apply shadow-slate-900/50;
+}
+
+.dark .shadow-lg {
+  @apply shadow-slate-900/70;
+}
+
+.dark input,
+.dark textarea,
+.dark select {
+  @apply bg-slate-900 border-slate-700 text-slate-100;
+}
+
+.dark input::placeholder,
+.dark textarea::placeholder {
+  @apply text-slate-500;
+}
+
+.dark button:not(.theme-toggle) {
+  @apply transition-colors;
+}
+

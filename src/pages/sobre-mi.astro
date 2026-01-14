@@ -8,7 +8,7 @@ import Timeline from "../components/Timeline.astro";
 
 <BaseLayout
     title="Experiencia docente | Canvas Docente"
-    description="Profesor de Artes Visuales y Tecnología Educativa — Raúl Rosales R."
+    description="Profesor de Artes Visuales y Tecnología Educativa — Raul Rosales R."
 >
     <Fragment slot="header"><Header /></Fragment>
 
@@ -18,8 +18,8 @@ import Timeline from "../components/Timeline.astro";
             <h1 class="text-3xl sm:text-4xl font-bold tracking-tight">
                 Profesor de Artes Visuales y Tecnología Educativa
             </h1>
-            <p class="mt-2 text-lg text-slate-700">Raúl Rosales R.</p>
-            <p class="mt-4 text-slate-700">
+         <!--    <p class=\"mt-2 text-lg text-slate-700 dark:text-slate-300\">Raúl Rosales R.</p> -->
+            <p class=\"mt-4 text-slate-700 dark:text-slate-300\">
                 Con más de 20 años de experiencia como profesor de Artes
                 Visuales y Tecnología, he dedicado mi carrera a integrar de
                 manera innovadora el arte, la tecnología, el cine y el
@@ -29,7 +29,7 @@ import Timeline from "../components/Timeline.astro";
                 y colaborativas que fomentan la expresión visual, la creatividad
                 y el pensamiento crítico en los estudiantes.
             </p>
-            <p class="mt-3 text-slate-700">
+            <p class="mt-3 text-slate-700 dark:text-slate-300">
                 Mi formación de posgrado en Innovación Curricular y Evaluación
                 Educativa, junto con especializaciones en Educación Tecnológica
                 y capacitaciones constantes en desarrollo web, programación y
@@ -40,7 +40,7 @@ import Timeline from "../components/Timeline.astro";
                 pedagógico de herramientas tecnológicas, siempre con el objetivo
                 de transformar la educación a través del arte y la innovación.
             </p>
-            <p class="mt-3 text-slate-700">
+            <p class="mt-3 text-slate-700 dark:text-slate-300">
                 Este espacio, es un reflejo de mi labor docente y creativa, un
                 lugar donde el arte se convierte en una herramienta de
                 transformación educativa y personal. Bienvenidos.
@@ -49,7 +49,7 @@ import Timeline from "../components/Timeline.astro";
 
         <aside class="justify-self-center md:justify-self-end">
             <div
-                class="overflow-hidden rounded-xl border border-slate-200 shadow-sm max-w-[320px]"
+                class="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm max-w-[320px]"
             >
                 <Image
                     src={raul}
@@ -57,9 +57,9 @@ import Timeline from "../components/Timeline.astro";
                     class="w-full object-cover"
                     style="max-height: 360px;"
                 />
-                <div class="p-4">
-                    <p class="font-semibold">Raúl Rosales R.</p>
-                    <p class="text-sm text-slate-600">
+                <div class="p-4 bg-white dark:bg-slate-900">
+                    <p class="font-semibold dark:text-white">Raúl Rosales R.</p>
+                    <p class="text-sm text-slate-600 dark:text-slate-400">
                         Profesor de Artes Visuales
                     </p>
                 </div>
@@ -68,9 +68,9 @@ import Timeline from "../components/Timeline.astro";
     </section>
 
     <!-- Mi Compromiso -->
-    <section class="mt-10 rounded-xl border border-slate-200 p-6 bg-white">
-        <h2 class="text-xl font-semibold">Mi Compromiso</h2>
-        <p class="mt-3 text-slate-700">
+    <section class="mt-10 rounded-xl border border-slate-200 dark:border-slate-700 p-6 bg-white dark:bg-slate-900">
+        <h2 class="text-xl font-semibold dark:text-white">Mi Compromiso</h2>
+        <p class="mt-3 text-slate-700 dark:text-slate-300">
             Potenciar la creatividad y la experimentación artística, integrando
             herramientas digitales, tecnología y cine para enriquecer la
             experiencia de aprendizaje. Buscar estrategias que conecten el arte
@@ -78,23 +78,23 @@ import Timeline from "../components/Timeline.astro";
             la comunidad.
         </p>
         <div class="mt-5 grid gap-4 sm:grid-cols-3">
-            <div class="rounded-lg border border-slate-200 p-4">
-                <p class="font-medium">Aprendizaje basado en proyectos</p>
-                <p class="text-sm text-slate-600 mt-1">
+            <div class="rounded-lg border border-slate-200 dark:border-slate-700 p-4 bg-slate-50 dark:bg-slate-800">
+                <p class="font-medium dark:text-white">Aprendizaje basado en proyectos</p>
+                <p class="text-sm text-slate-600 dark:text-slate-400 mt-1">
                     Propuestas prácticas con impacto y sentido para los
                     estudiantes.
                 </p>
             </div>
-            <div class="rounded-lg border border-slate-200 p-4">
-                <p class="font-medium">Arte + Tecnología</p>
-                <p class="text-sm text-slate-600 mt-1">
+            <div class="rounded-lg border border-slate-200 dark:border-slate-700 p-4 bg-slate-50 dark:bg-slate-800">
+                <p class="font-medium dark:text-white">Arte + Tecnología</p>
+                <p class="text-sm text-slate-600 dark:text-slate-400 mt-1">
                     Integración de medios digitales, IA y audiovisual en
                     procesos creativos.
                 </p>
             </div>
-            <div class="rounded-lg border border-slate-200 p-4">
-                <p class="font-medium">Vínculo con la comunidad</p>
-                <p class="text-sm text-slate-600 mt-1">
+            <div class="rounded-lg border border-slate-200 dark:border-slate-700 p-4 bg-slate-50 dark:bg-slate-800">
+                <p class="font-medium dark:text-white">Vínculo con la comunidad</p>
+                <p class="text-sm text-slate-600 dark:text-slate-400 mt-1">
                     Proyectos que dialogan con cultura local y territorios.
                 </p>
             </div>
@@ -102,17 +102,17 @@ import Timeline from "../components/Timeline.astro";
     </section>
 
     <!-- Formación -->
-    <section class="mt-10 rounded-xl border border-slate-200 p-6 bg-white">
-        <h2 class="text-xl font-semibold">
+    <section class="mt-10 rounded-xl border border-slate-200 dark:border-slate-700 p-6 bg-white dark:bg-slate-900">
+        <h2 class="text-xl font-semibold dark:text-white">
             Formación Académica y Especializaciones
         </h2>
         <ul class="mt-4 space-y-3">
             <li class="flex gap-3">
                 <span
-                    class="shrink-0 rounded-md bg-sky-100 text-sky-700 px-2 py-0.5 text-xs font-medium"
+                    class="shrink-0 rounded-md bg-sky-100 dark:bg-sky-900 text-sky-700 dark:text-sky-300 px-2 py-0.5 text-xs font-medium"
                     >2013</span
                 >
-                <p class="text-slate-700">
+                <p class="text-slate-700 dark:text-slate-300">
                     <strong
                         >Magíster en Innovación Curricular y Evaluación
                         Educativa</strong
@@ -121,20 +121,20 @@ import Timeline from "../components/Timeline.astro";
             </li>
             <li class="flex gap-3">
                 <span
-                    class="shrink-0 rounded-md bg-sky-100 text-sky-700 px-2 py-0.5 text-xs font-medium"
+                    class="shrink-0 rounded-md bg-sky-100 dark:bg-sky-900 text-sky-700 dark:text-sky-300 px-2 py-0.5 text-xs font-medium"
                     >2009</span
                 >
-                <p class="text-slate-700">
+                <p class="text-slate-700 dark:text-slate-300">
                     <strong>Postítulo en Educación Tecnológica</strong>.
                     Universidad Viña del Mar.
                 </p>
             </li>
             <li class="flex gap-3">
                 <span
-                    class="shrink-0 rounded-md bg-sky-100 text-sky-700 px-2 py-0.5 text-xs font-medium"
+                    class="shrink-0 rounded-md bg-sky-100 dark:bg-sky-900 text-sky-700 dark:text-sky-300 px-2 py-0.5 text-xs font-medium"
                     >2005</span
                 >
-                <p class="text-slate-700">
+                <p class="text-slate-700 dark:text-slate-300">
                     <strong
                         >Licenciado en Educación y Pedagogía en Artes Plásticas</strong
                     >. Universidad Metropolitana de Ciencias de la Educación.
@@ -144,14 +144,14 @@ import Timeline from "../components/Timeline.astro";
     </section>
 
     <!-- Capacitaciones -->
-    <section class="mt-10 rounded-xl border border-slate-200 p-6 bg-white">
-        <h2 class="text-xl font-semibold">
+    <section class="mt-10 rounded-xl border border-slate-200 dark:border-slate-700 p-6 bg-white dark:bg-slate-900">
+        <h2 class="text-xl font-semibold dark:text-white">
             Capacitaciones y Cursos Destacados
         </h2>
         <div class="mt-4 grid gap-3 sm:grid-cols-2">
-            <div class="rounded-lg border border-slate-200 p-4">
-                <p class="text-sm text-slate-500">2025</p>
-                <p class="font-medium">
+            <div class="rounded-lg border border-slate-200 dark:border-slate-700 p-4 bg-slate-50 dark:bg-slate-800">
+                <p class="text-sm text-slate-500 dark:text-slate-400">2025</p>
+                <p class="font-medium dark:text-slate-100">
                     Diplomado en Formación de Instructores en Habilidades y
                     Técnicas de Enseñanza-Aprendizaje
                 </p>
@@ -195,30 +195,30 @@ import Timeline from "../components/Timeline.astro";
 
     <!-- Áreas de especialización -->
     <section class="mt-10">
-        <h2 class="text-xl font-semibold">Áreas de Especialización</h2>
+        <h2 class="text-xl font-semibold dark:text-white">Áreas de Especialización</h2>
         <div class="mt-4 grid gap-4 md:grid-cols-3">
-            <div class="rounded-xl border border-slate-200 p-5 bg-white">
-                <h3 class="font-semibold">
+            <div class="rounded-xl border border-slate-200 dark:border-slate-700 p-5 bg-white dark:bg-slate-900">
+                <h3 class="font-semibold dark:text-white">
                     Arte contemporáneo y educación artística
                 </h3>
-                <p class="mt-2 text-slate-700">
+                <p class="mt-2 text-slate-700 dark:text-slate-300">
                     Exploración de técnicas modernas y su aplicación en la
                     educación.
                 </p>
             </div>
-            <div class="rounded-xl border border-slate-200 p-5 bg-white">
-                <h3 class="font-semibold">
+            <div class="rounded-xl border border-slate-200 dark:border-slate-700 p-5 bg-white dark:bg-slate-900">
+                <h3 class="font-semibold dark:text-white">
                     Producción audiovisual y cine independiente
                 </h3>
-                <p class="mt-2 text-slate-700">
+                <p class="mt-2 text-slate-700 dark:text-slate-300">
                     Creación de proyectos audiovisuales con enfoque educativo.
                 </p>
             </div>
-            <div class="rounded-xl border border-slate-200 p-5 bg-white">
-                <h3 class="font-semibold">
+            <div class="rounded-xl border border-slate-200 dark:border-slate-700 p-5 bg-white dark:bg-slate-900">
+                <h3 class="font-semibold dark:text-white">
                     Desarrollo web y tecnología educativa
                 </h3>
-                <p class="mt-2 text-slate-700">
+                <p class="mt-2 text-slate-700 dark:text-slate-300">
                     Uso de herramientas digitales para enriquecer el
                     aprendizaje.
                 </p>

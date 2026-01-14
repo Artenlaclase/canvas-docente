@@ -7,4 +7,5 @@ module.exports = {
     extend: {},
   },
   plugins: [require('@tailwindcss/typography')],
+  darkMode: 'class', // Enable class-based dark mode (controlled by .dark on <html>)
 };

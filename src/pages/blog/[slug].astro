@@ -2,6 +2,7 @@
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import Header from "../../components/Header.astro";
 import BlogCard from "../../components/BlogCard.astro";
+import RelatedContent from "../../components/RelatedContent.astro";
 import { getCollection } from 'astro:content';
 import { getWpBase, getWpPostBySlug, getWpPostById, type NormalizedPost } from "../../utils/wp";
 
@@ -164,10 +165,14 @@ function resolveCoverPath(path: string | undefined): string | undefined {
   title={`${(isWP ? wpPost!.data.title : localPost.data.title)} | Blog`}
   description={isWP ? (wpPost!.data.excerpt || wpPost!.data.title) : (localPost.data.excerpt || localPost.data.title)}
   image={(Astro as any).locals?._ogImage}
+  imageAlt={isWP ? wpPost!.data.title : localPost.data.title}
   url={`/blog/${encodeURIComponent(isWP ? wpPost!.slug : localPost.slug)}`}
   publishedTime={isWP ? wpPost!.data.date : (localPost.data.date as string)}
   modifiedTime={isWP ? (wpPost!.data.modified || wpPost!.data.date) : (localPost.data.updated || localPost.data.date)}
   tags={(isWP ? (wpPost!.data.categories || []).map(c=>c.name).filter(Boolean) : (localPost.data.tags || [])).slice(0,12)}
+  type="article"
+  author="Raúl Rosales"
+>
 >
   <Fragment slot="header"><Header /></Fragment>
   <div class="mx-auto max-w-7xl px-4 lg:px-8">
@@ -263,6 +268,7 @@ function resolveCoverPath(path: string | undefined): string | undefined {
       </aside>
     </div>
   </div>
+  <RelatedContent contentType="blog" currentSlug={isWP ? wpPost!.slug : localPost.slug} limit={3} />
   {/* Lightbox modal for post images */}
   <div id="post-lightbox" class="fixed inset-0 z-[9999] hidden" aria-hidden="true">
     <div id="post-backdrop" class="absolute inset-0 bg-black/70"></div>

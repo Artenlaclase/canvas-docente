@@ -33,15 +33,22 @@ const items = images.map((img, idx) => ({ idx, src: (img as any).src ?? img, w: 
     <div class="absolute inset-0 flex items-center justify-center p-4">
       <div class="relative w-full max-w-6xl">
         <div class="relative bg-black rounded-lg overflow-hidden">
-          <button id="closeBtn" class="absolute top-2 right-2 z-10 h-10 w-10 grid place-items-center rounded-full bg-black/50 text-white text-xl hover:bg-black/70" aria-label="Cerrar">×</button>
-          <button id="prevBtn" class="absolute left-2 top-1/2 -translate-y-1/2 z-10 h-10 w-10 rounded-full bg-black/40 text-white hover:bg-black/60">‹</button>
-          <button id="nextBtn" class="absolute right-2 top-1/2 -translate-y-1/2 z-10 h-10 w-10 rounded-full bg-black/40 text-white hover:bg-black/60">›</button>
+          <button id="closeBtn" class="absolute top-2 right-2 z-10 h-10 w-10 grid place-items-center rounded-full bg-black/50 text-white text-xl hover:bg-black/70 transition-colors" aria-label="Cerrar" title="Cerrar (Esc)">×</button>
+          <button id="prevBtn" class="absolute left-2 top-1/2 -translate-y-1/2 z-10 h-10 w-10 rounded-full bg-black/40 text-white hover:bg-black/60 transition-colors flex items-center justify-center" aria-label="Imagen anterior" title="Anterior">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+          </button>
+          <button id="nextBtn" class="absolute right-2 top-1/2 -translate-y-1/2 z-10 h-10 w-10 rounded-full bg-black/40 text-white hover:bg-black/60 transition-colors flex items-center justify-center" aria-label="Siguiente imagen" title="Siguiente">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+          </button>
           <div class="w-[min(100vw,96rem)] max-h-[95vh] pt-12 flex items-center justify-center">
             <img id="lightboxImage" class="max-h-[95vh] w-auto object-contain select-none" alt={altBase} />
           </div>
         </div>
-  <div id="counter" class="mt-2 text-center text-white/90"></div>
-  <div id="caption" class="mt-1 text-center text-white/80 text-sm"></div>
+        <div class="mt-3 flex items-center justify-between gap-4">
+          <div id="counter" class="text-center text-white/90 text-sm font-medium"></div>
+          <div class="flex-1"></div>
+          <div id="caption" class="text-center text-white/80 text-sm line-clamp-2 flex-1"></div>
+        </div>
       </div>
     </div>
   </div>
@@ -192,7 +199,7 @@ const items = images.map((img, idx) => ({ idx, src: (img as any).src ?? img, w: 
           // Simple center zoom; for cursor-anchored zoom we'd adjust offsets based on mouse position
           if (prevScale !== scale) applyTransform();
         }, { passive: false });
-        // Drag to pan when zoomed
+        // Drag to pan when zoomed (mouse)
         if (imgEl) imgEl.addEventListener('mousedown', (e) => {
           if (scale <= 1) return;
           isPanning = true; startX = e.clientX - offsetX; startY = e.clientY - offsetY;
@@ -206,6 +213,35 @@ const items = images.map((img, idx) => ({ idx, src: (img as any).src ?? img, w: 
         document.addEventListener('mouseup', () => {
           isPanning = false; if (imgEl) imgEl.style.cursor = 'grab';
         });
+        
+        // Touch swipe support for mobile navigation
+        let touchStartX = 0;
+        let touchEndX = 0;
+        let touchStartTime = 0;
+        
+        if (lightbox) {
+          lightbox.addEventListener('touchstart', (e) => {
+            touchStartX = e.changedTouches[0].clientX;
+            touchStartTime = Date.now();
+          }, false);
+          
+          lightbox.addEventListener('touchend', (e) => {
+            touchEndX = e.changedTouches[0].clientX;
+            const touchDuration = Date.now() - touchStartTime;
+            const touchDistance = touchStartX - touchEndX;
+            
+            // Considerar swipe si la distancia es > 50px y < 300ms (rápido)
+            if (Math.abs(touchDistance) > 50 && touchDuration < 300) {
+              if (touchDistance > 0) {
+                // Swipe hacia la izquierda = siguiente
+                next();
+              } else {
+                // Swipe hacia la derecha = anterior
+                prev();
+              }
+            }
+          }, false);
+        }
       }
 
       function initAll(){

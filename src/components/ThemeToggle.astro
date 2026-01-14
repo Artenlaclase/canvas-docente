@@ -1,0 +1,84 @@
+---
+// Theme toggle component (Light/Dark mode)
+// Integrates with Tailwind's dark mode class on <html>
+---
+
+<button 
+  id="theme-toggle"
+  type="button"
+  class="theme-toggle inline-flex items-center justify-center rounded-full p-2 text-white hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-400 transition-colors"
+  aria-label="Cambiar tema"
+  title="Cambiar tema (Sol/Luna)"
+>
+  <!-- Sun icon (shown in light mode) -->
+  <svg 
+    id="sun-icon"
+    class="h-6 w-6 hidden dark:flex"
+    fill="currentColor" 
+    viewBox="0 0 24 24"
+    aria-hidden="true"
+  >
+    <path d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+  </svg>
+  
+  <!-- Moon icon (shown in dark mode) -->
+  <svg 
+    id="moon-icon"
+    class="h-6 w-6 flex dark:hidden"
+    fill="currentColor" 
+    viewBox="0 0 24 24"
+    aria-hidden="true"
+  >
+    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+  </svg>
+</button>
+
+<script>
+  // Theme toggle with localStorage persistence
+  (function() {
+    const toggle = document.getElementById('theme-toggle');
+    const html = document.documentElement;
+    
+    // Check if dark mode is preferred on first load
+    const isDarkMode = () => {
+      const stored = localStorage.getItem('theme');
+      if (stored) return stored === 'dark';
+      return window.matchMedia('(prefers-color-scheme: dark)').matches;
+    };
+    
+    // Apply theme on load
+    const applyTheme = (dark: boolean) => {
+      if (dark) {
+        html.classList.add('dark');
+        localStorage.setItem('theme', 'dark');
+      } else {
+        html.classList.remove('dark');
+        localStorage.setItem('theme', 'light');
+      }
+    };
+    
+    // Initialize theme
+    applyTheme(isDarkMode());
+    
+    // Toggle on button click
+    toggle?.addEventListener('click', () => {
+      const isDark = html.classList.contains('dark');
+      applyTheme(!isDark);
+    });
+    
+    // Listen for system theme changes
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+      const stored = localStorage.getItem('theme');
+      if (!stored) {
+        // Only auto-apply if user hasn't manually set a preference
+        applyTheme(e.matches);
+      }
+    });
+  })();
+</script>
+
+<style>
+  .theme-toggle {
+    transition: background-color 200ms ease, color 200ms ease;
+  }
+</style>

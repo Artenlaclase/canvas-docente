@@ -41,7 +41,11 @@ const getCats = (post: any) => {
   return cats.filter(Boolean).join(' ');
 };
 ---
-<BaseLayout title="Blog | Canvas Docente">
+<BaseLayout 
+  title="Blog | Canvas Docente"
+  description="Artículos sobre técnicas de arte, educación artística y experiencias en el aula. Exploración de métodos de enseñanza y proyectos colaborativos."
+  type="website"
+>
   <Fragment slot="header"><Header /></Fragment>
   <h1 class="sr-only">Blog</h1>
   <div class="mb-6">

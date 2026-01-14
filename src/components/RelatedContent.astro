@@ -1,0 +1,143 @@
+---
+// Component to display related articles/gallery items and call-to-action buttons
+// Usage: <RelatedContent contentType="blog" currentSlug="..." />
+
+interface Props {
+  contentType?: 'blog' | 'gallery'; // Type of content to fetch related items for
+  currentSlug?: string; // Current article/gallery slug to exclude from results
+  limit?: number; // Number of related items to show (default: 3)
+  tags?: string[]; // Optional tags to filter by
+}
+
+const { 
+  contentType = 'blog', 
+  currentSlug = '', 
+  limit = 3,
+  tags = []
+} = Astro.props as Props;
+
+// This will be dynamically populated based on contentType
+let relatedItems: any[] = [];
+
+if (contentType === 'blog') {
+  // Import blog collection
+  const { getCollection } = await import('astro:content');
+  const allPosts = await getCollection('blog');
+  
+  // Filter: exclude current, sort by date descending, take limit
+  relatedItems = allPosts
+    .filter(post => post.slug !== currentSlug)
+    .sort((a: any, b: any) => {
+      const dateA = new Date(a.data.date || 0).getTime();
+      const dateB = new Date(b.data.date || 0).getTime();
+      return dateB - dateA;
+    })
+    .slice(0, limit);
+} else if (contentType === 'gallery') {
+  // Import gallery collection
+  const { getCollection } = await import('astro:content');
+  const allGallery = await getCollection('galeria');
+  
+  // Filter: exclude current, shuffle randomly, take limit
+  relatedItems = allGallery
+    .filter(item => item.slug !== currentSlug)
+    .sort(() => Math.random() - 0.5)
+    .slice(0, limit);
+}
+---
+
+<section class="py-8 border-t border-slate-200 mt-8">
+  {/* Related Content Section */}
+  {relatedItems.length > 0 && (
+    <div class="mb-8">
+      <h2 class="text-2xl font-semibold mb-6">
+        {contentType === 'blog' ? 'Artículos Relacionados' : 'Más en Galería'}
+      </h2>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {relatedItems.map((item) => (
+          <a 
+            href={contentType === 'blog' ? `/blog/${item.slug}` : `/galeria/tecnica/${item.data.technique}`}
+            class="group block overflow-hidden rounded-lg border border-slate-200 hover:shadow-lg hover:border-sky-300 transition-all"
+          >
+            {item.data.cover || item.data.image ? (
+              <img 
+                src={item.data.cover ?? item.data.image} 
+                alt={item.data.title}
+                loading="lazy"
+                class="aspect-video w-full object-cover group-hover:scale-105 transition-transform"
+              />
+            ) : (
+              <div class="aspect-video w-full bg-gradient-to-br from-slate-200 to-slate-100 flex items-center justify-center">
+                <svg class="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+              </div>
+            )}
+            <div class="p-4">
+              <h3 class="font-semibold text-base group-hover:text-sky-600 transition-colors line-clamp-2">
+                {item.data.title}
+              </h3>
+              {contentType === 'blog' && item.data.date && (
+                <p class="text-xs text-slate-500 mt-2">
+                  {new Date(item.data.date).toLocaleDateString('es-ES', { 
+                    year: 'numeric', 
+                    month: 'long', 
+                    day: 'numeric' 
+                  })}
+                </p>
+              )}
+              {contentType === 'gallery' && item.data.technique && (
+                <p class="text-xs text-slate-500 mt-2">{item.data.technique} · {item.data.year}</p>
+              )}
+            </div>
+          </a>
+        ))}
+      </div>
+    </div>
+  )}
+
+  {/* Call-to-Action Block */}
+  <div class="bg-gradient-to-r from-sky-50 to-blue-50 rounded-lg border border-sky-200 p-8 text-center">
+    <h3 class="text-xl font-semibold text-slate-900 mb-3">
+      ¿Quieres colaborar o aprender más?
+    </h3>
+    <p class="text-slate-600 mb-6">
+      {contentType === 'blog' 
+        ? 'Contáctame para discutir proyectos educativos, talleres o colaboraciones.' 
+        : 'Explora más técnicas artísticas y descubre cómo integrar el arte en tu institución.'}
+    </p>
+    <div class="flex flex-col sm:flex-row gap-4 justify-center">
+      <a 
+        href="/#contacto"
+        class="inline-flex items-center justify-center px-6 py-3 bg-sky-600 text-white font-medium rounded-lg hover:bg-sky-700 transition-colors"
+      >
+        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+        </svg>
+        Contactar
+      </a>
+      {contentType === 'blog' && (
+        <a 
+          href="/galeria"
+          class="inline-flex items-center justify-center px-6 py-3 bg-white text-sky-600 font-medium rounded-lg border border-sky-200 hover:bg-sky-50 transition-colors"
+        >
+          <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          </svg>
+          Ver Galería
+        </a>
+      )}
+      {contentType === 'gallery' && (
+        <a 
+          href="/notas"
+          class="inline-flex items-center justify-center px-6 py-3 bg-white text-sky-600 font-medium rounded-lg border border-sky-200 hover:bg-sky-50 transition-colors"
+        >
+          <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C6.5 6.253 2 10.998 2 17.25m20 0C22 10.998 17.5 6.253 12 6.253" />
+          </svg>
+          Leer Notas
+        </a>
+      )}
+    </div>
+  </div>
+</section>
