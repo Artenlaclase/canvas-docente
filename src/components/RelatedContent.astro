@@ -2,6 +2,8 @@
 // Component to display related articles/gallery items and call-to-action buttons
 // Usage: <RelatedContent contentType="blog" currentSlug="..." />
 
+import { Image } from 'astro:assets';
+
 interface Props {
   contentType?: 'blog' | 'gallery'; // Type of content to fetch related items for
   currentSlug?: string; // Current article/gallery slug to exclude from results
@@ -34,15 +36,47 @@ if (contentType === 'blog') {
     })
     .slice(0, limit);
 } else if (contentType === 'gallery') {
-  // Import gallery collection
-  const { getCollection } = await import('astro:content');
-  const allGallery = await getCollection('galeria');
+  // Load first image for each technique from assets
+  const pinturaMods = import.meta.glob('../assets/images/pintura*.{jpg,JPG,jpeg,png,webp}', { eager: true, import: 'default' });
+  const collageMods = import.meta.glob('../assets/images/collage*.{jpg,JPG,jpeg,png,webp}', { eager: true, import: 'default' });
+  const audiovisualMods = import.meta.glob('../assets/images/audiovisual*.{jpg,JPG,jpeg,png,webp}', { eager: true, import: 'default' });
+  const mosaicoMods = import.meta.glob('../assets/images/mosaico*.{jpg,JPG,jpeg,png,webp}', { eager: true, import: 'default' });
+  const volumenMods = import.meta.glob('../assets/images/volumen*.{jpg,JPG,jpeg,png,webp}', { eager: true, import: 'default' });
+  const mascaraMods = import.meta.glob('../assets/images/mascara*.{jpg,JPG,jpeg,png,webp}', { eager: true, import: 'default' });
+  const lamparasMods = import.meta.glob('../assets/images/lamparas*.{jpg,JPG,jpeg,png,webp}', { eager: true, import: 'default' });
+  const disenoMods = import.meta.glob('../assets/images/diseño*.{jpg,JPG,jpeg,png,webp}', { eager: true, import: 'default' });
+  const dibujoMods = import.meta.glob('../assets/images/dibujo*.{jpg,JPG,jpeg,png,webp}', { eager: true, import: 'default' });
+
+  const techniques = [
+    { name: 'Pintura', mods: pinturaMods, description: 'Exploraciones pictóricas' },
+    { name: 'Collage', mods: collageMods, description: 'Composición con materiales diversos' },
+    { name: 'Audiovisual', mods: audiovisualMods, description: 'Narrativas visuales y sonoras' },
+    { name: 'Mosaico', mods: mosaicoMods, description: 'Construcción con teselas' },
+    { name: 'Volumen', mods: volumenMods, description: 'Trabajo tridimensional' },
+    { name: 'Mascaras', mods: mascaraMods, description: 'Diseño de máscaras' },
+    { name: 'Lamparas', mods: lamparasMods, description: 'Luminarias artesanales' },
+    { name: 'Diseno', mods: disenoMods, description: 'Lenguaje visual aplicado' },
+    { name: 'Dibujo', mods: dibujoMods, description: 'Técnicas de línea y sombreado' }
+  ];
+
+  // Filter out current technique and select random ones
+  const availableTechniques = techniques.filter(t => t.name !== currentSlug);
   
-  // Filter: exclude current, shuffle randomly, take limit
-  relatedItems = allGallery
-    .filter(item => item.slug !== currentSlug)
+  // Shuffle and take limit
+  relatedItems = availableTechniques
     .sort(() => Math.random() - 0.5)
-    .slice(0, limit);
+    .slice(0, limit)
+    .map(tech => {
+      const images = Object.values(tech.mods);
+      return {
+        data: {
+          title: tech.name,
+          technique: tech.name,
+          image: images[0] || null,
+          description: tech.description
+        }
+      };
+    });
 }
 ---
 
@@ -60,12 +94,22 @@ if (contentType === 'blog') {
             class="group block overflow-hidden rounded-lg border border-slate-200 hover:shadow-lg hover:border-sky-300 transition-all"
           >
             {item.data.cover || item.data.image ? (
-              <img 
-                src={item.data.cover ?? item.data.image} 
-                alt={item.data.title}
-                loading="lazy"
-                class="aspect-video w-full object-cover group-hover:scale-105 transition-transform"
-              />
+              contentType === 'gallery' && item.data.image ? (
+                <Image 
+                  src={item.data.image} 
+                  alt={item.data.title}
+                  class="aspect-video w-full object-cover group-hover:scale-105 transition-transform"
+                  width={400}
+                  height={225}
+                />
+              ) : (
+                <img 
+                  src={item.data.cover ?? item.data.image} 
+                  alt={item.data.title}
+                  loading="lazy"
+                  class="aspect-video w-full object-cover group-hover:scale-105 transition-transform"
+                />
+              )
             ) : (
               <div class="aspect-video w-full bg-gradient-to-br from-slate-200 to-slate-100 flex items-center justify-center">
                 <svg class="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -86,8 +130,8 @@ if (contentType === 'blog') {
                   })}
                 </p>
               )}
-              {contentType === 'gallery' && item.data.technique && (
-                <p class="text-xs text-slate-500 mt-2">{item.data.technique} · {item.data.year}</p>
+              {contentType === 'gallery' && item.data.description && (
+                <p class="text-xs text-slate-500 mt-2">{item.data.description}</p>
               )}
             </div>
           </a>
