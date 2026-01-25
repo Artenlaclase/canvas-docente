@@ -1,14 +1,14 @@
 ---
 import { Image } from 'astro:assets';
 import pintura from "../assets/images/pintura.jpg";
-import collage from "../assets/images/collage.jpg";
+import collage from "../assets/images/collage-arte-colaborativo-2007.jpg";
 import audiovisual from "../assets/images/audiovisual-taller-cine-2018.jpg";
 import mosaico from "../assets/images/mosaico.jpg";
 import volumen from "../assets/images/volumen.jpg";
 import mascaras from "../assets/images/mascara.jpg";
 import lamparas from "../assets/images/lamparas.jpg";
 import diseno from "../assets/images/diseño.jpg";
-import dibujo from "../assets/images/dibujo.jpg";
+import dibujo from "../assets/images/dibujo-actividad-clase-artes-visuales-2018.jpg";
 
 const techniques = [
   { name: 'Pintura', img: pintura },
@@ -25,7 +25,7 @@ const techniques = [
 <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
   {techniques.map((t) => (
     <a href={`/galeria/tecnica/${encodeURIComponent(t.name)}`} class="group block overflow-hidden rounded-lg border border-slate-200 hover:shadow-md transition">
-      <Image src={t.img} alt={t.name} class="aspect-[4/3] w-full object-cover group-hover:scale-[1.02] transition" />
+      <Image src={t.img} alt={`Galería de ${t.name} - proyectos artísticos de estudiantes`} class="aspect-[4/3] w-full object-cover group-hover:scale-[1.02] transition" />
       <div class="p-3">
         <h3 class="font-medium">{t.name}</h3>
       </div>
