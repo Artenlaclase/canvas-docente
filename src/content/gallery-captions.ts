@@ -91,7 +91,7 @@ const captions: Record<string, Record<string, { description?: string; year?: num
             'mascara-personajes-en-contexto-2018.jpg': { description: 'Personajes en contexto', year: 2018, school: 'Instituto La Salle La Florida' },
             'mascara-proceso-técnica-de-yeso-2017.jpg': { description: 'Proceso - técnica de yeso', year: 2017, school: 'Instituto La Salle La Florida' },
             'mascara-profesor-Raúl-Rosales-2013.png': { description: 'Máscara del profesor Raúl Rosales', year: 2013, school: 'Colegio King School Cordillera La Pintana' },
-            'mascara-profesor-tirana-carton-y-papel-2020.jpg': { description: 'Profesor con tirana de cartón y papel', year: 2020, school: 'Artenlaclase' },
+            'mascara-profesor-tirana-carton-y-papel-2020.jpg': { description: 'Profesor con máscara de la tirana de cartón y papel', year: 2020, school: 'Artenlaclase' },
             'mascara-profesor-tirana-en-proceso-2020.jpg': { description: 'Profesor con tirana en proceso', year: 2020, school: 'Artenlaclase' },
             'mascara-recrear-un-personaje-2013.jpg': { description: 'Recrear un personaje', year: 2013, school: 'Colegio King School Cordillera La Pintana' },
             'mascara-séptimo-básico-2013.jpg': { description: 'Máscaras - séptimo básico', year: 2013, school: 'Colegio King School Cordillera La Pintana' },

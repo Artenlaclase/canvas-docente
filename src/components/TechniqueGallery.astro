@@ -11,20 +11,20 @@ import diseno from "../assets/images/diseño-ambiente-escena-ideal-2019.jpg";
 import dibujo from "../assets/images/dibujo-actividad-clase-artes-visuales-2018.jpg";
 
 const techniques = [
-  { name: 'Pintura', img: pintura },
-  { name: 'Collage', img: collage },
-  { name: 'Audiovisual', img: audiovisual },
-  { name: 'Mosaico', img: mosaico },
-  { name: 'Volumen', img: volumen },
-  { name: 'Máscaras', img: mascaras },
-  { name: 'Lámparas', img: lamparas },
-  { name: 'Diseño', img: diseno },
-  { name: 'Dibujo', img: dibujo },
+  { name: 'Pintura', slug: 'Pintura', img: pintura },
+  { name: 'Collage', slug: 'Collage', img: collage },
+  { name: 'Audiovisual', slug: 'Audiovisual', img: audiovisual },
+  { name: 'Mosaico', slug: 'Mosaico', img: mosaico },
+  { name: 'Volumen', slug: 'Volumen', img: volumen },
+  { name: 'Máscaras', slug: 'Mascaras', img: mascaras },
+  { name: 'Lámparas', slug: 'Lamparas', img: lamparas },
+  { name: 'Diseño', slug: 'Diseno', img: diseno },
+  { name: 'Dibujo', slug: 'Dibujo', img: dibujo },
 ];
 ---
 <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
   {techniques.map((t) => (
-    <a href={`/galeria/tecnica/${encodeURIComponent(t.name)}`} class="group block overflow-hidden rounded-lg border border-slate-200 hover:shadow-md transition">
+    <a href={`/galeria/tecnica/${encodeURIComponent(t.slug)}`} class="group block overflow-hidden rounded-lg border border-slate-200 hover:shadow-md transition">
       <Image src={t.img} alt={`Galería de ${t.name} - proyectos artísticos de estudiantes`} class="aspect-[4/3] w-full object-cover group-hover:scale-[1.02] transition" />
       <div class="p-3">
         <h3 class="font-medium">{t.name}</h3>
