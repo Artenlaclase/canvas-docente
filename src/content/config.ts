@@ -5,7 +5,7 @@ const galeria = defineCollection({
   schema: z.object({
     title: z.string(),
     technique: z.enum([
-      'Pintura', 'Collage', 'Audiovisual', 'Mosaico', 'Volumen', 'Máscaras', 'Lámparas', 'Diseño', 'Dibujo'
+      'Pintura', 'Collage', 'Audiovisual', 'Mosaico', 'Volumen', 'Mascaras', 'Lamparas', 'Diseno', 'Dibujo'
     ]),
     year: z.number().int(),
     description: z.string().optional(),

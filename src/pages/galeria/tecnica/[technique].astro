@@ -29,6 +29,14 @@ const fromProps = (Astro.props as { technique?: string }).technique;
 const fromParams = Astro.params.technique ? decodeURIComponent(Astro.params.technique) : undefined;
 const technique = fromProps ?? fromParams ?? '';
 
+// Mapeo de slugs sin tilde a nombres con tilde para mostrar
+const displayNames: Record<string, string> = {
+  'Mascaras': 'Máscaras',
+  'Lamparas': 'Lámparas',
+  'Diseno': 'Diseño',
+};
+const displayName = displayNames[technique] || technique;
+
 const all = await getCollection('galeria');
 const items = all.filter((p) => p.data.technique === technique);
 
@@ -46,7 +54,7 @@ const descriptions: Record<string, string> = {
 };
 
 const pageDescription = descriptions[technique] || 'Exploración artística y educativa';
-const pageTitle = `${technique} - Galería de Obras | Canvas Docente`;
+const pageTitle = `${displayName} - Galería de Obras | Canvas Docente`;
 
 // Carga de imágenes desde assets según técnica (globs estáticos requeridos por Vite)
 const pinturaMods = import.meta.glob('../../../assets/images/pintura*.{jpg,JPG,jpeg,png,webp}', { eager: true, import: 'default' });
@@ -56,7 +64,7 @@ const mosaicoMods = import.meta.glob('../../../assets/images/mosaico*.{jpg,JPG,j
 const volumenMods = import.meta.glob('../../../assets/images/volumen*.{jpg,JPG,jpeg,png,webp}', { eager: true, import: 'default' });
 const mascaraSingMods = import.meta.glob('../../../assets/images/mascara*.{jpg,JPG,jpeg,png,webp}', { eager: true, import: 'default' });
 const mascaraPluralMods = import.meta.glob('../../../assets/images/mascaras*.{jpg,JPG,jpeg,png,webp}', { eager: true, import: 'default' });
-const lamparasMods = import.meta.glob('../../../assets/images/lamparas*.{jpg,JPG,jpeg,png,webp}', { eager: true, import: 'default' });
+const lamparasMods = import.meta.glob('../../../assets/images/lampara*.{jpg,JPG,jpeg,png,webp}', { eager: true, import: 'default' });
 const disenoAccMods = import.meta.glob('../../../assets/images/diseño*.{jpg,JPG,jpeg,png,webp}', { eager: true, import: 'default' });
 const disenoPlainMods = import.meta.glob('../../../assets/images/diseno*.{jpg,JPG,jpeg,png,webp}', { eager: true, import: 'default' });
 const dibujoMods = import.meta.glob('../../../assets/images/dibujo*.{jpg,JPG,jpeg,png,webp}', { eager: true, import: 'default' });
@@ -95,9 +103,9 @@ const captions = techniqueImageEntries.map(([path]) => {
   if (tail.length) parts.push(tail.join(' · '));
   return parts.join(' — ');
 });
-// Videos por técnica (por ahora, solo 'Máscaras')
+// Videos por técnica (usar slugs sin tilde como claves)
 const videosByTechnique: Record<string, string[]> = {
-  'Máscaras': [
+  'Mascaras': [
     'gQ9AeOeJX1k',
     'jsGT0yx8gKc',
     'qrW2V9qM8uY',
@@ -119,7 +127,7 @@ const videosByTechnique: Record<string, string[]> = {
     '5G6UYTdF_X8',
     'MNfhHAoZWUI',
   ],
-  'Lámparas': [
+  'Lamparas': [
     'J_GFneb2gNA',
     'GBWoQNeF0AA',
     'OsYarQyn8qo',
@@ -127,7 +135,7 @@ const videosByTechnique: Record<string, string[]> = {
   'Mosaico': [
     'WG_XxmmN4p0',
   ],
-  'Diseño': [
+  'Diseno': [
     'mWyme7rLMkQ',
     'tQMzXoUNh3c',
     'Aber-IwWh3Q',
@@ -145,7 +153,7 @@ const firstImage = techniqueImages[0];
   title={pageTitle}
   description={pageDescription}
   image={firstImage ? (typeof firstImage === 'string' ? firstImage : firstImage.src) : undefined}
-  imageAlt={`Galería de obras de arte en técnica ${technique}`}
+  imageAlt={`Galería de obras de arte en técnica ${displayName}`}
   type="artwork"
 >
   <Fragment slot="header"><Header /></Fragment>
@@ -165,17 +173,17 @@ const firstImage = techniqueImages[0];
       <span class="text-slate-400">/</span>
       <span class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-sky-200 bg-sky-50 text-sky-700">
         <span class="i-heroicons-photo-20-solid" aria-hidden="true"></span>
-        <span>{technique}</span>
+        <span>{displayName}</span>
       </span>
     </nav>
   </div>
 
-  <h1 class="text-2xl font-semibold mb-2">{technique}</h1>
+  <h1 class="text-2xl font-semibold mb-2">{displayName}</h1>
   <p class="text-slate-700 mb-6">{descriptions[technique] ?? 'Selección de trabajos y materiales de referencia para esta técnica.'}</p>
 
   {techniqueImages.length > 0 ? (
     <section class="mb-10">
-      <LightboxGallery images={techniqueImages} altBase={technique} captions={captions} />
+      <LightboxGallery images={techniqueImages} altBase={displayName} captions={captions} />
     </section>
   ) : null}
 
@@ -200,7 +208,7 @@ const firstImage = techniqueImages[0];
     </section>
   ) : null}
 
-  <RelatedContent contentType="gallery" currentSlug={technique} limit={3} />
+  <RelatedContent contentType="gallery" currentSlug={technique} limit={4} />
 
   <!-- Floating scroll-to-top button -->
   <button id="scrollTopBtn" aria-label="Subir" class="fixed bottom-6 right-6 z-40 inline-flex items-center justify-center h-11 w-11 rounded-full bg-slate-900 text-white shadow-lg hover:bg-slate-800 transition opacity-0 pointer-events-none">
