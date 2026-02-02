@@ -4,6 +4,7 @@ import favicon from "../assets/favicon.svg";
 import Footer from "../components/Footer.astro";
 import SEO from "../components/SEO.astro";
 import SchemaPerson from "../components/SchemaPerson.astro";
+import UmamiAnalytics from "../components/UmamiAnalytics.astro";
 
 // Tipado separado para evitar objetos inline grandes que a veces confunden el parser
 interface LayoutProps {
@@ -61,6 +62,7 @@ const {
     />
     
     <SchemaPerson />
+    <UmamiAnalytics />
   </head>
   <body class="min-h-screen bg-white text-slate-900 antialiased flex flex-col">
     <slot name="header" />

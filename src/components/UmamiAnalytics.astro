@@ -1,0 +1,25 @@
+---
+// Umami Analytics - Self-hosted web analytics
+// Para configurar:
+// 1. Crea una cuenta en https://umami.is/ (cloud) o auto-hospeda
+// 2. Agrega tu sitio web en el panel de Umami
+// 3. Copia el Website ID y el Script URL
+// 4. Agrega las variables al archivo .env:
+//    PUBLIC_UMAMI_WEBSITE_ID=tu-website-id
+//    PUBLIC_UMAMI_SCRIPT_URL=https://tu-dominio.umami.is/script.js
+
+const websiteId = import.meta.env.PUBLIC_UMAMI_WEBSITE_ID;
+const scriptUrl = import.meta.env.PUBLIC_UMAMI_SCRIPT_URL || 'https://cloud.umami.is/script.js';
+
+// Solo cargar en producción si está configurado
+const shouldLoad = websiteId && import.meta.env.PROD;
+---
+
+{shouldLoad && (
+  <script
+    async
+    defer
+    data-website-id={websiteId}
+    src={scriptUrl}
+  ></script>
+)}
