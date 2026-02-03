@@ -140,16 +140,27 @@ export function getConfiguredMediaRoot(): string | undefined {
 
 function shouldProxyImages(): boolean {
   // Enable with PUBLIC_IMAGE_PROXY=on (or true). Useful in dev to bypass hotlinking.
+  // In production, ALWAYS read from process.env first (runtime) to allow dynamic config without rebuild
   // eslint-disable-next-line no-undef
   const pe: any = (typeof process !== 'undefined' && (process as any)?.env) ? (process as any).env : {};
-  let v: string = (pe.PUBLIC_IMAGE_PROXY || pe.IMAGE_PROXY || '').toString().toLowerCase();
-  if (!v) {
-    // eslint-disable-next-line no-undef
-    const envAny: any = (typeof import.meta !== 'undefined' && (import.meta as any)?.env) ? (import.meta as any).env : {};
-    v = (envAny.PUBLIC_IMAGE_PROXY || envAny.IMAGE_PROXY || '').toString().toLowerCase();
+  
+  // In production, prioritize runtime env vars over build-time vars
+  const isProduction = typeof process !== 'undefined' && process.env && process.env.NODE_ENV === 'production';
+  
+  let v: string = '';
+  if (isProduction) {
+    // Production: read ONLY from process.env (runtime)
+    v = (pe.PUBLIC_IMAGE_PROXY || pe.IMAGE_PROXY || '').toString().toLowerCase();
+  } else {
+    // Development: try process.env first, then import.meta.env
+    v = (pe.PUBLIC_IMAGE_PROXY || pe.IMAGE_PROXY || '').toString().toLowerCase();
+    if (!v) {
+      // eslint-disable-next-line no-undef
+      const envAny: any = (typeof import.meta !== 'undefined' && (import.meta as any)?.env) ? (import.meta as any).env : {};
+      v = (envAny.PUBLIC_IMAGE_PROXY || envAny.IMAGE_PROXY || '').toString().toLowerCase();
+    }
   }
-  // Default to OFF in production to avoid cross-origin/protection issues on hosting
-  if (!v && typeof process !== 'undefined' && process.env && process.env.NODE_ENV === 'production') return false;
+  
   return v === 'on' || v === 'true' || v === '1';
 }
 
