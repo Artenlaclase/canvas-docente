@@ -69,6 +69,8 @@ export function getWpBase(): string | undefined {
     const envAny: any = (typeof import.meta !== 'undefined' && (import.meta as any)?.env) ? (import.meta as any).env : {};
     b = envAny.WP_API_BASE || envAny.PUBLIC_WP_API_BASE;
   }
+  // Trim to prevent leading/trailing whitespace issues from env vars
+  if (b && typeof b === 'string') b = b.trim();
   return ensureApiBase(b);
 }
 
@@ -115,6 +117,8 @@ export function getConfiguredMediaRoot(): string | undefined {
     const envAny: any = (typeof import.meta !== 'undefined' && (import.meta as any)?.env) ? (import.meta as any).env : {};
     override = envAny.WP_MEDIA_ROOT || envAny.PUBLIC_WP_MEDIA_ROOT;
   }
+  // Trim to prevent leading/trailing whitespace issues from env vars
+  if (override && typeof override === 'string') override = override.trim();
   if (override && /^https?:\/\//i.test(override)) {
     try {
       const u = new URL(override);
