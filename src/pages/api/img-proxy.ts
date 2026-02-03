@@ -43,12 +43,16 @@ async function handle(request: Request, headOnly = false): Promise<Response> {
   const target = searchParams.get('url');
   if (!target) return new Response('Missing url', { status: 400 });
 
-  // eslint-disable-next-line no-undef
+  // Check both import.meta.env (Astro) and process.env (Node.js runtime)
   const envAny: any = import.meta.env as any;
-  const proxyEnabled = ((envAny.PUBLIC_IMAGE_PROXY || envAny.IMAGE_PROXY || '').toString().trim().toLowerCase());
+  const proxyFromAstro = (envAny.PUBLIC_IMAGE_PROXY || envAny.IMAGE_PROXY || '').toString().trim().toLowerCase();
+  const proxyFromNode = (typeof process !== 'undefined' && process.env) 
+    ? (process.env.PUBLIC_IMAGE_PROXY || process.env.IMAGE_PROXY || '').toString().trim().toLowerCase()
+    : '';
+  const proxyEnabled = proxyFromNode || proxyFromAstro;
   const enabled = (proxyEnabled === 'on' || proxyEnabled === 'true' || proxyEnabled === '1');
   if (!enabled) {
-    if (import.meta.env.DEV) console.warn('[img-proxy] 403: disabled. Set PUBLIC_IMAGE_PROXY=on to enable.');
+    if (import.meta.env.DEV) console.warn('[img-proxy] 403: disabled. Set PUBLIC_IMAGE_PROXY=on to enable. Got:', proxyEnabled);
     return new Response('Proxy disabled', { status: 403 });
   }
 
