@@ -1,6 +1,8 @@
 // Lightweight WordPress REST helpers to integrate WP posts in Astro
 // Usage: set env WP_API_BASE="https://your-wp-site.com/wp-json/wp/v2" (or base without /wp-json, both supported)
 
+import { createHmac } from 'node:crypto';
+
 export type WpRawPost = {
   id: number;
   slug: string;
@@ -171,7 +173,18 @@ function shouldProxyImages(): boolean {
 function normalizeImageUrl(url?: string, siteRoot?: string, mediaRoot?: string): string | undefined {
   if (!url) return undefined;
   const trimmed = url.trim();
-  const wrapProxy = (u: string) => (shouldProxyImages() ? `/api/img-proxy?url=${encodeURIComponent(u)}` : u);
+  const wrapProxy = (u: string) => {
+    if (!shouldProxyImages()) return u;
+    const encoded = encodeURIComponent(u);
+    // Add HMAC signature if IMAGE_PROXY_SECRET is set
+    const pe: any = (typeof process !== 'undefined' && (process as any)?.env) ? (process as any).env : {};
+    const secret = pe.IMAGE_PROXY_SECRET || '';
+    if (secret) {
+      const sig = createHmac('sha256', secret).update(u).digest('hex');
+      return `/api/img-proxy?url=${encoded}&sig=${sig}`;
+    }
+    return `/api/img-proxy?url=${encoded}`;
+  };
   if (/^https?:\/\//i.test(trimmed)) {
     // Optionally upgrade http->https if same host and siteRoot is https
     try {
