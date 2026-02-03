@@ -176,13 +176,8 @@ function normalizeImageUrl(url?: string, siteRoot?: string, mediaRoot?: string):
   const wrapProxy = (u: string) => {
     if (!shouldProxyImages()) return u;
     const encoded = encodeURIComponent(u);
-    // Add HMAC signature if IMAGE_PROXY_SECRET is set
-    const pe: any = (typeof process !== 'undefined' && (process as any)?.env) ? (process as any).env : {};
-    const secret = pe.IMAGE_PROXY_SECRET || '';
-    if (secret) {
-      const sig = createHmac('sha256', secret).update(u).digest('hex');
-      return `/api/img-proxy?url=${encoded}&sig=${sig}`;
-    }
+    // No signature needed if host is in PUBLIC_IMAGE_PROXY_ALLOW
+    // Signature is optional for allowlisted hosts in proxy
     return `/api/img-proxy?url=${encoded}`;
   };
   if (/^https?:\/\//i.test(trimmed)) {
