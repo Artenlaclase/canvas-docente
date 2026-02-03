@@ -43,12 +43,16 @@ async function handle(request: Request, headOnly = false): Promise<Response> {
   const target = searchParams.get('url');
   if (!target) return new Response('Missing url', { status: 400 });
 
-  // eslint-disable-next-line no-undef
+  // Check both import.meta.env (Astro) and process.env (Node.js runtime)
   const envAny: any = import.meta.env as any;
-  const proxyEnabled = ((envAny.PUBLIC_IMAGE_PROXY || envAny.IMAGE_PROXY || '').toString().toLowerCase());
+  const proxyFromAstro = (envAny.PUBLIC_IMAGE_PROXY || envAny.IMAGE_PROXY || '').toString().trim().toLowerCase();
+  const proxyFromNode = (typeof process !== 'undefined' && process.env) 
+    ? (process.env.PUBLIC_IMAGE_PROXY || process.env.IMAGE_PROXY || '').toString().trim().toLowerCase()
+    : '';
+  const proxyEnabled = proxyFromNode || proxyFromAstro;
   const enabled = (proxyEnabled === 'on' || proxyEnabled === 'true' || proxyEnabled === '1');
   if (!enabled) {
-    if (import.meta.env.DEV) console.warn('[img-proxy] 403: disabled. Set PUBLIC_IMAGE_PROXY=on to enable.');
+    if (import.meta.env.DEV) console.warn('[img-proxy] 403: disabled. Set PUBLIC_IMAGE_PROXY=on to enable. Got:', proxyEnabled);
     return new Response('Proxy disabled', { status: 403 });
   }
 
@@ -63,12 +67,22 @@ async function handle(request: Request, headOnly = false): Promise<Response> {
     return new Response('Protocol not allowed', { status: 400 });
   }
 
+  // Allowlist check - if specified, only allow listed hosts
+  const allowList = (envAny.PUBLIC_IMAGE_PROXY_ALLOW || envAny.IMAGE_PROXY_ALLOW || '').toString();
+  const isAllowlisted = isAllowed(url, allowList);
+  
+  // If allowlist is configured but host is not in it, deny
+  if (allowList && !isAllowlisted) {
+    if (import.meta.env.DEV) console.warn('[img-proxy] 403: host not in allowlist', { host: url.host, allowList });
+    return new Response('Host not allowed', { status: 403 });
+  }
+  
   // Firma HMAC opcional para evitar uso como open-proxy
   // Server-only secret: IMAGE_PROXY_SECRET (no PUBLIC_)
-  // Firma = hex(hmacSHA256(secret, targetURL))
-  // Enviar como parámetro &sig=<hex>
+  // Only check signature if configured AND host is not allowlisted
+  // (allowlisted hosts bypass signature requirement for easier integration)
   const secret = (typeof process !== 'undefined' && process.env?.IMAGE_PROXY_SECRET) || '';
-  if (secret) {
+  if (secret && !isAllowlisted) {
     const sig = searchParams.get('sig');
     if (!sig) return new Response('Missing signature', { status: 403 });
     try {
@@ -77,12 +91,6 @@ async function handle(request: Request, headOnly = false): Promise<Response> {
     } catch {
       return new Response('Signature check error', { status: 500 });
     }
-  }
-
-  const allowList = (envAny.PUBLIC_IMAGE_PROXY_ALLOW || envAny.IMAGE_PROXY_ALLOW || '').toString();
-  if (!isAllowed(url, allowList)) {
-    if (import.meta.env.DEV) console.warn('[img-proxy] 403: host not allowed', { host: url.host, allowList });
-    return new Response('Host not allowed', { status: 403 });
   }
 
   try {

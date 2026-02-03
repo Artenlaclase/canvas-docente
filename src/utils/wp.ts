@@ -1,6 +1,8 @@
 // Lightweight WordPress REST helpers to integrate WP posts in Astro
 // Usage: set env WP_API_BASE="https://your-wp-site.com/wp-json/wp/v2" (or base without /wp-json, both supported)
 
+import { createHmac } from 'node:crypto';
+
 export type WpRawPost = {
   id: number;
   slug: string;
@@ -69,6 +71,8 @@ export function getWpBase(): string | undefined {
     const envAny: any = (typeof import.meta !== 'undefined' && (import.meta as any)?.env) ? (import.meta as any).env : {};
     b = envAny.WP_API_BASE || envAny.PUBLIC_WP_API_BASE;
   }
+  // Trim to prevent leading/trailing whitespace issues from env vars
+  if (b && typeof b === 'string') b = b.trim();
   return ensureApiBase(b);
 }
 
@@ -115,6 +119,8 @@ export function getConfiguredMediaRoot(): string | undefined {
     const envAny: any = (typeof import.meta !== 'undefined' && (import.meta as any)?.env) ? (import.meta as any).env : {};
     override = envAny.WP_MEDIA_ROOT || envAny.PUBLIC_WP_MEDIA_ROOT;
   }
+  // Trim to prevent leading/trailing whitespace issues from env vars
+  if (override && typeof override === 'string') override = override.trim();
   if (override && /^https?:\/\//i.test(override)) {
     try {
       const u = new URL(override);
@@ -140,23 +146,40 @@ export function getConfiguredMediaRoot(): string | undefined {
 
 function shouldProxyImages(): boolean {
   // Enable with PUBLIC_IMAGE_PROXY=on (or true). Useful in dev to bypass hotlinking.
+  // In production, ALWAYS read from process.env first (runtime) to allow dynamic config without rebuild
   // eslint-disable-next-line no-undef
   const pe: any = (typeof process !== 'undefined' && (process as any)?.env) ? (process as any).env : {};
-  let v: string = (pe.PUBLIC_IMAGE_PROXY || pe.IMAGE_PROXY || '').toString().toLowerCase();
-  if (!v) {
-    // eslint-disable-next-line no-undef
-    const envAny: any = (typeof import.meta !== 'undefined' && (import.meta as any)?.env) ? (import.meta as any).env : {};
-    v = (envAny.PUBLIC_IMAGE_PROXY || envAny.IMAGE_PROXY || '').toString().toLowerCase();
+  
+  // In production, prioritize runtime env vars over build-time vars
+  const isProduction = typeof process !== 'undefined' && process.env && process.env.NODE_ENV === 'production';
+  
+  let v: string = '';
+  if (isProduction) {
+    // Production: read ONLY from process.env (runtime)
+    v = (pe.PUBLIC_IMAGE_PROXY || pe.IMAGE_PROXY || '').toString().toLowerCase();
+  } else {
+    // Development: try process.env first, then import.meta.env
+    v = (pe.PUBLIC_IMAGE_PROXY || pe.IMAGE_PROXY || '').toString().toLowerCase();
+    if (!v) {
+      // eslint-disable-next-line no-undef
+      const envAny: any = (typeof import.meta !== 'undefined' && (import.meta as any)?.env) ? (import.meta as any).env : {};
+      v = (envAny.PUBLIC_IMAGE_PROXY || envAny.IMAGE_PROXY || '').toString().toLowerCase();
+    }
   }
-  // Default to OFF in production to avoid cross-origin/protection issues on hosting
-  if (!v && typeof process !== 'undefined' && process.env && process.env.NODE_ENV === 'production') return false;
+  
   return v === 'on' || v === 'true' || v === '1';
 }
 
 function normalizeImageUrl(url?: string, siteRoot?: string, mediaRoot?: string): string | undefined {
   if (!url) return undefined;
   const trimmed = url.trim();
-  const wrapProxy = (u: string) => (shouldProxyImages() ? `/api/img-proxy?url=${encodeURIComponent(u)}` : u);
+  const wrapProxy = (u: string) => {
+    if (!shouldProxyImages()) return u;
+    const encoded = encodeURIComponent(u);
+    // No signature needed if host is in PUBLIC_IMAGE_PROXY_ALLOW
+    // Signature is optional for allowlisted hosts in proxy
+    return `/api/img-proxy?url=${encoded}`;
+  };
   if (/^https?:\/\//i.test(trimmed)) {
     // Optionally upgrade http->https if same host and siteRoot is https
     try {
