@@ -63,18 +63,22 @@ async function handle(request: Request, headOnly = false): Promise<Response> {
     return new Response('Protocol not allowed', { status: 400 });
   }
 
-  // Allowlist check first (before signature) - more permissive for known hosts
+  // Allowlist check - if specified, only allow listed hosts
   const allowList = (envAny.PUBLIC_IMAGE_PROXY_ALLOW || envAny.IMAGE_PROXY_ALLOW || '').toString();
   const isAllowlisted = isAllowed(url, allowList);
   
+  // If allowlist is configured but host is not in it, deny
+  if (allowList && !isAllowlisted) {
+    if (import.meta.env.DEV) console.warn('[img-proxy] 403: host not in allowlist', { host: url.host, allowList });
+    return new Response('Host not allowed', { status: 403 });
+  }
+  
   // Firma HMAC opcional para evitar uso como open-proxy
   // Server-only secret: IMAGE_PROXY_SECRET (no PUBLIC_)
-  // Firma = hex(hmacSHA256(secret, targetURL))
-  // Enviar como parámetro &sig=<hex>
-  // If host is allowlisted, signature is optional (for easier integration)
+  // Only check signature if configured AND host is not allowlisted
+  // (allowlisted hosts bypass signature requirement for easier integration)
   const secret = (typeof process !== 'undefined' && process.env?.IMAGE_PROXY_SECRET) || '';
   if (secret && !isAllowlisted) {
-    // Require signature for non-allowlisted hosts
     const sig = searchParams.get('sig');
     if (!sig) return new Response('Missing signature', { status: 403 });
     try {
@@ -83,12 +87,6 @@ async function handle(request: Request, headOnly = false): Promise<Response> {
     } catch {
       return new Response('Signature check error', { status: 500 });
     }
-  }
-
-  if (!isAllowlisted && !allowList) {
-    // No allowlist and not allowlisted = deny
-    if (import.meta.env.DEV) console.warn('[img-proxy] 403: host not allowed', { host: url.host, allowList });
-    return new Response('Host not allowed', { status: 403 });
   }
 
   try {
